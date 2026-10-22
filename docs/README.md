@@ -8,7 +8,7 @@
 
 ## 기술 결정 (ADR)
 
-아직 없음
+- [ADR-0001](adr/0001-tech-stack.md) 기술 스택: Python(FastAPI) 백엔드, Next.js 웹, PostgreSQL
 
 ## 트러블슈팅
 
