@@ -2,6 +2,8 @@
 
 외주 포트폴리오용 자동화 작업 관리 포털. 첫 시나리오는 온라인 셀러를 위한 경쟁사 가격 모니터링과 가격 분석.
 
+스택: Python(FastAPI) 백엔드, Next.js(TypeScript) 웹, PostgreSQL, Docker Compose. 근거와 미룬 결정은 docs/adr/0001-tech-stack.md.
+
 이 프로젝트에서는 결과물만큼 개발 과정 기록이 중요하다. 아래 규칙은 코드를 빨리 짜는 것보다 우선한다.
 
 ## 커밋
