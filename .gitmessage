@@ -1,0 +1,11 @@
+
+# <타입>(<범위>): <제목>     명사형, 마침표 없이, 50자 안팎
+# 예) fix(parser): 할인가가 있을 때 정가를 저장하던 문제 수정
+#
+# 본문: 무엇보다 왜. 한 줄로 충분하면 한 줄만.
+#
+# Refs: #이슈, TS-0001 / ADR-0001 / AN-0001
+#
+# 타입: feat fix refactor perf test docs build ci chore style revert
+# 제목에 '및', '그리고'가 들어가면 쪼갤 수 있는지 먼저 본다.
+# 규칙 전체: docs/conventions.md
