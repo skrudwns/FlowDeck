@@ -1,0 +1,32 @@
+#!/bin/sh
+# 커밋 메시지 제목이 docs/conventions.md 형식인지 검사한다.
+# 켜기: git config core.hooksPath .githooks
+
+msg_file="$1"
+
+# 주석(#)과 빈 줄을 건너뛴 첫 줄이 제목
+subject=$(grep -v '^#' "$msg_file" | grep -v '^[[:space:]]*$' | head -n 1)
+
+# git이 자동으로 만드는 메시지는 통과
+case "$subject" in
+  "Merge "*|"Revert \""*|"fixup! "*|"squash! "*|"amend! "*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|refactor|perf|test|docs|build|ci|chore|style|revert)(\([a-z0-9-]+\))?!?: [^ ].*'
+
+if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
+  echo "커밋 제목 형식이 맞지 않습니다: $subject" >&2
+  echo "  형식: <타입>(<범위>): <제목>" >&2
+  echo "  예:   fix(parser): 할인가가 있을 때 정가를 저장하던 문제 수정" >&2
+  echo "  규칙: docs/conventions.md" >&2
+  exit 1
+fi
+
+case "$subject" in
+  *.)
+    echo "제목 끝에 마침표를 붙이지 않습니다: $subject" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
