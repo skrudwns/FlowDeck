@@ -10,6 +10,7 @@
 
 - [ADR-0001](adr/0001-tech-stack.md) 기술 스택: Python(FastAPI) 백엔드, Next.js 웹, PostgreSQL
 - [ADR-0002](adr/0002-real-data-source.md) 실데이터 소스: 네이버 쇼핑 검색 API
+- [ADR-0003](adr/0003-collector-runtime.md) 수집기 실행 위치: GitHub Actions + Neon
 
 ## 트러블슈팅
 
