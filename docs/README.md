@@ -12,6 +12,7 @@
 - [ADR-0002](adr/0002-real-data-source.md) 실데이터 소스: 네이버 쇼핑 검색 API (폐기, API 종료)
 - [ADR-0003](adr/0003-collector-runtime.md) 수집기 실행 위치: GitHub Actions + Neon
 - [ADR-0004](adr/0004-real-data-source-alternatives.md) 실데이터 소스: 다나와 직접 수집, 수집 원칙
+- [ADR-0005](adr/0005-collector-data-model.md) 다나와 수집 범위와 저장 구조 (제안)
 
 ## 트러블슈팅
 
