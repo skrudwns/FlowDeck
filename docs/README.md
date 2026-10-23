@@ -11,7 +11,7 @@
 - [ADR-0001](adr/0001-tech-stack.md) 기술 스택: Python(FastAPI) 백엔드, Next.js 웹, PostgreSQL
 - [ADR-0002](adr/0002-real-data-source.md) 실데이터 소스: 네이버 쇼핑 검색 API (폐기, API 종료)
 - [ADR-0003](adr/0003-collector-runtime.md) 수집기 실행 위치: GitHub Actions + Neon
-- [ADR-0004](adr/0004-real-data-source-alternatives.md) 실데이터 소스 다시 정하기 (제안: 11번가 API 확인 후 다나와)
+- [ADR-0004](adr/0004-real-data-source-alternatives.md) 실데이터 소스: 다나와 직접 수집, 수집 원칙
 
 ## 트러블슈팅
 
