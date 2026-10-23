@@ -1,0 +1,21 @@
+# 비밀 값. 예시는 .env.example에 둔다
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS, 에디터
+.DS_Store
+.idea/
+.vscode/
