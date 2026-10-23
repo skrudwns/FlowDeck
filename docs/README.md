@@ -16,7 +16,7 @@
 
 ## 트러블슈팅
 
-아직 없음
+- [TS-0001](troubleshooting/0001-amended-commit-already-pushed.md) push된 커밋을 amend해서 로컬과 원격 브랜치가 갈라짐
 
 ## 분석 노트
 
