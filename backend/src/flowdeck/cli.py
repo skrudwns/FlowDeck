@@ -1,5 +1,6 @@
 """수집기 명령어.
 
+uv run flowdeck products sync targets/danawa.txt
 uv run flowdeck products add 109680239 122644105
 uv run flowdeck products list
 uv run flowdeck products deactivate 109680239
@@ -9,6 +10,7 @@ uv run flowdeck collect --trigger manual
 import argparse
 import logging
 import sys
+from pathlib import Path
 
 from sqlalchemy import select
 
@@ -16,6 +18,7 @@ from flowdeck.collector import SOURCE, run_collection
 from flowdeck.danawa.client import DanawaClient
 from flowdeck.db import make_engine, make_session_factory
 from flowdeck.models import Product
+from flowdeck.targets import read_targets, sync_products
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,6 +28,10 @@ def main(argv: list[str] | None = None) -> int:
     products = commands.add_parser("products", help="수집 대상 상품 관리").add_subparsers(
         dest="action", required=True
     )
+    sync = products.add_parser(
+        "sync", help="대상 목록 파일과 DB 맞추기 (파일에 없는 상품은 비활성화)"
+    )
+    sync.add_argument("file", type=Path)
     add = products.add_parser("add", help="다나와 pcode로 상품 추가 (이미 있으면 다시 활성화)")
     add.add_argument("pcodes", nargs="+")
     products.add_parser("list", help="상품 목록")
@@ -41,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "collect":
         return _collect(session_factory, args.trigger, args.delay)
+    if args.action == "sync":
+        return _sync(session_factory, args.file)
     if args.action == "add":
         return _add(session_factory, args.pcodes)
     if args.action == "deactivate":
@@ -63,6 +72,19 @@ def _collect(session_factory, trigger: str, delay: float) -> int:
         print(run.error_message)
     # 전부 실패하면 GitHub Actions에서 실패로 보이게 종료 코드 1
     return 1 if run.status == "failed" else 0
+
+
+def _sync(session_factory, path: Path) -> int:
+    pcodes = read_targets(path)
+    with session_factory() as session:
+        result = sync_products(session, SOURCE, pcodes)
+    print(
+        f"대상 {len(pcodes)}개: 추가 {len(result.added)}, 다시 활성화 {len(result.reactivated)}, "
+        f"비활성화 {len(result.deactivated)}"
+    )
+    for pcode in result.deactivated:
+        print(f"  비활성화: {pcode}")
+    return 0
 
 
 def _add(session_factory, pcodes: list[str]) -> int:
