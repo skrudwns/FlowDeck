@@ -290,6 +290,8 @@ export interface components {
             product_id: number;
             /** Source Product Id */
             source_product_id: string;
+            /** Product Name */
+            product_name: string | null;
             /** Status */
             status: string;
             /** Http Status */

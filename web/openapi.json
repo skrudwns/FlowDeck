@@ -792,6 +792,17 @@
             "type": "string",
             "title": "Source Product Id"
           },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
           "status": {
             "type": "string",
             "title": "Status"
@@ -835,6 +846,7 @@
           "snapshot_id",
           "product_id",
           "source_product_id",
+          "product_name",
           "status",
           "http_status",
           "lowest_price",

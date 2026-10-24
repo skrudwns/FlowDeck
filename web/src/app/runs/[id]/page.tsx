@@ -48,7 +48,8 @@ async function RunDetail({ params }: { params: PageProps<"/runs/[id]">["params"]
           <ul className="space-y-2 text-sm">
             {failed.map((r) => (
               <li key={r.snapshot_id} className="rounded border border-red-200 bg-red-50 p-3">
-                <span className="font-medium">{r.source_product_id}</span> <StatusBadge status={r.status} />
+                <span className="font-medium">{r.product_name ?? r.source_product_id}</span>{" "}
+                <span className="text-zinc-500">({r.source_product_id})</span> <StatusBadge status={r.status} />
                 <p className="mt-1 text-red-900">{r.error_message}</p>
               </li>
             ))}
@@ -61,7 +62,7 @@ async function RunDetail({ params }: { params: PageProps<"/runs/[id]">["params"]
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs text-zinc-500">
               <tr>
-                <th className="px-4 py-2">상품(pcode)</th>
+                <th className="px-4 py-2">상품</th>
                 <th className="px-4 py-2">상태</th>
                 <th className="px-4 py-2">HTTP</th>
                 <th className="px-4 py-2 text-right">최저가</th>
@@ -73,8 +74,9 @@ async function RunDetail({ params }: { params: PageProps<"/runs/[id]">["params"]
                 <tr key={r.snapshot_id} className="border-b border-zinc-100 last:border-0">
                   <td className="px-4 py-2">
                     <Link href={`/products/${r.product_id}`} className="text-sky-700 hover:underline">
-                      {r.source_product_id}
+                      {r.product_name ?? r.source_product_id}
                     </Link>
+                    <span className="ml-1 text-xs text-zinc-400">{r.source_product_id}</span>
                   </td>
                   <td className="px-4 py-2">
                     <StatusBadge status={r.status} />
