@@ -19,3 +19,6 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
+
+# 로컬 미리보기 서버 설정 (개인 경로가 들어 있다)
+.claude/launch.json
