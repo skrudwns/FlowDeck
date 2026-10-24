@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from flowdeck.collector import run_collection
 from flowdeck.danawa.parser import parse_product_page
-from flowdeck.models import CollectionRun, PriceSnapshot, Product
+from flowdeck.models import CollectionRun, PriceSnapshot, Product, SellerPrice
 from flowdeck.polite_http import Blocked, Response
 from flowdeck.sources import Source
 
@@ -58,6 +58,16 @@ def test_saves_prices_and_sellers(session_factory):
     assert (run.status, run.products_total, run.products_succeeded) == ("success", 2, 2)
     assert run.finished_at is not None
     assert snapshots(session_factory) == [("1", "ok", 50000, 2), ("2", "ok", 50000, 2)]
+
+
+def test_records_source_on_run_and_stock_on_sellers(session_factory):
+    add_products(session_factory, "1")
+
+    run = run_collection(session_factory, source(FakeFetcher({"1": ok()})))
+
+    with session_factory() as session:
+        assert session.get(CollectionRun, run.id).source == "danawa"
+        assert session.scalars(select(SellerPrice.in_stock)).all() == [True, True]
 
 
 def test_fills_product_name_from_page(session_factory):

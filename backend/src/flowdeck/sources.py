@@ -20,12 +20,14 @@ class SellerOffer:
     code: str | None
     price: int
     delivery_fee: int | None
+    in_stock: bool = True
 
 
 @dataclass(frozen=True)
 class ProductPage:
     product_id: str
     name: str
+    # 재고 있는 판매처 기준
     lowest_price: int
     offer_count: int | None
     sellers: tuple[SellerOffer, ...]

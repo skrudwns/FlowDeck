@@ -46,6 +46,7 @@ def seeded(session_factory):
         a = Product(source="danawa", source_product_id="111", name="상품 A", active=True)
         b = Product(source="danawa", source_product_id="222", name="상품 B", active=False)
         run1 = CollectionRun(
+            source="danawa",
             started_at=t1,
             finished_at=t1,
             status="success",
@@ -54,6 +55,7 @@ def seeded(session_factory):
             products_succeeded=2,
         )
         run2 = CollectionRun(
+            source="danawa",
             started_at=t2,
             finished_at=t2,
             status="partial",

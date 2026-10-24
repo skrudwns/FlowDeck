@@ -12,6 +12,7 @@ def make_run(session_factory, statuses, run_status="success", seller_errors=0):
     """statuses: 상품별 스냅샷 상태 목록. seller_errors: ok 중 판매처 목록을 못 읽은 개수."""
     with session_factory() as session:
         run = CollectionRun(
+            source="danawa",
             started_at=NOW,
             finished_at=NOW,
             status=run_status,

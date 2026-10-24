@@ -32,6 +32,7 @@ def run_collection(
 ) -> CollectionRun:
     with session_factory() as session:
         run = CollectionRun(
+            source=source.name,
             started_at=now(),
             status="running",
             trigger=trigger,
@@ -160,6 +161,7 @@ def _collect_one(source: Source, product: Product, now: Callable[[], datetime]) 
                 seller_code=s.code,
                 price=s.price,
                 delivery_fee=s.delivery_fee,
+                in_stock=s.in_stock,
             )
             for s in page.sellers
         ],
