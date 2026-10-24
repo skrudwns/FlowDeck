@@ -42,6 +42,7 @@ def test_lists_sellers_of_a_snapshot(api, seeded):
             "seller_code": "AAA01",
             "price": 48000,
             "delivery_fee": 0,
+            "in_stock": True,
         },
         {
             "rank": 2,
@@ -49,6 +50,7 @@ def test_lists_sellers_of_a_snapshot(api, seeded):
             "seller_code": None,
             "price": 49000,
             "delivery_fee": 3000,
+            "in_stock": False,
         },
     ]
 

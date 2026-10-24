@@ -34,7 +34,7 @@ def seeded(session_factory):
 
     상품 A(활성), B(비활성). 실행 2번:
     - run1 (08:17 UTC): A 50,000원, B 30,000원
-    - run2 (09:17 UTC): A 48,000원(판매처 2곳), B 요청 실패
+    - run2 (09:17 UTC): A 48,000원(판매처 2곳, 두 번째는 품절), B 요청 실패
     """
     from datetime import UTC, datetime
 
@@ -104,6 +104,7 @@ def seeded(session_factory):
                     seller_code=None,
                     price=49000,
                     delivery_fee=3000,
+                    in_stock=False,
                 ),
             ],
         )

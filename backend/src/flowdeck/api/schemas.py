@@ -43,10 +43,13 @@ class SellerOut(_FromORM):
     seller_code: str | None
     price: int
     delivery_fee: int | None
+    # 품절로 나온 판매처. 최저가와 판매처 수에는 들어가지 않는다 (ADR-0010)
+    in_stock: bool
 
 
 class RunOut(_FromORM):
     id: int
+    source: str
     started_at: datetime
     finished_at: datetime | None
     status: str
