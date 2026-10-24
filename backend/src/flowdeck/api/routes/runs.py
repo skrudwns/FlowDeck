@@ -42,6 +42,7 @@ def get_run(run_id: int, session: SessionDep) -> RunDetail:
             snapshot_id=s.id,
             product_id=s.product_id,
             source_product_id=s.product.source_product_id,
+            product_name=s.product.name,
             status=s.status,
             http_status=s.http_status,
             lowest_price=s.lowest_price,

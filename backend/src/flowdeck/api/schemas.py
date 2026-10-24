@@ -60,6 +60,7 @@ class RunProductResult(_FromORM):
     snapshot_id: int
     product_id: int
     source_product_id: str
+    product_name: str | None
     status: str
     http_status: int | None
     lowest_price: int | None
