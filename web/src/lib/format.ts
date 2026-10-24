@@ -26,6 +26,12 @@ export function formatKstShort(iso: string): string {
   return kstShort.format(new Date(iso));
 }
 
+const SOURCE_LABELS: Record<string, string> = { danawa: "다나와", mockshop: "연습 쇼핑몰" };
+
+export function sourceLabel(source: string): string {
+  return SOURCE_LABELS[source] ?? source;
+}
+
 const won = new Intl.NumberFormat("ko-KR");
 
 export function formatWon(value: number | null | undefined): string {

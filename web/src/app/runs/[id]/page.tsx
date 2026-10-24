@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Loading, Section } from "@/components/section";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api/client";
-import { formatDuration, formatKst, formatWon } from "@/lib/format";
+import { formatDuration, formatKst, formatWon, sourceLabel } from "@/lib/format";
 
 export default function RunPage({ params }: PageProps<"/runs/[id]">) {
   return (
@@ -32,7 +32,8 @@ async function RunDetail({ params }: { params: PageProps<"/runs/[id]">["params"]
         실행 #{run.id} <StatusBadge status={run.status} />
       </h1>
 
-      <dl className="mb-8 grid grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-white p-5 sm:grid-cols-4">
+      <dl className="mb-8 grid grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-white p-5 sm:grid-cols-5">
+        <Item label="수집 대상" value={sourceLabel(run.source)} />
         <Item label="시작" value={formatKst(run.started_at)} />
         <Item label="걸린 시간" value={formatDuration(run.started_at, run.finished_at)} />
         <Item label="실행 방식" value={run.trigger === "schedule" ? "예약" : "수동"} />

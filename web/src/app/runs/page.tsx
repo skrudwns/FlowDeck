@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Loading } from "@/components/section";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api/client";
-import { formatDuration, formatKst } from "@/lib/format";
+import { formatDuration, formatKst, sourceLabel } from "@/lib/format";
 
 const PAGE_SIZE = 50;
 
@@ -33,6 +33,7 @@ async function RunsTable({ searchParams }: { searchParams: PageProps<"/runs">["s
           <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs text-zinc-500">
             <tr>
               <th className="px-4 py-2">번호</th>
+              <th className="px-4 py-2">수집 대상</th>
               <th className="px-4 py-2">시작</th>
               <th className="px-4 py-2">상태</th>
               <th className="px-4 py-2">실행 방식</th>
@@ -49,6 +50,7 @@ async function RunsTable({ searchParams }: { searchParams: PageProps<"/runs">["s
                     #{run.id}
                   </Link>
                 </td>
+                <td className="px-4 py-2 whitespace-nowrap">{sourceLabel(run.source)}</td>
                 <td className="px-4 py-2 whitespace-nowrap">{formatKst(run.started_at)}</td>
                 <td className="px-4 py-2">
                   <StatusBadge status={run.status} />
@@ -63,7 +65,7 @@ async function RunsTable({ searchParams }: { searchParams: PageProps<"/runs">["s
             ))}
             {runs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-zinc-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-zinc-500">
                   실행 기록이 없다
                 </td>
               </tr>
