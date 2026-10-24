@@ -16,6 +16,9 @@ def session_factory():
     try:
         engine.connect().close()
     except OperationalError:
+        # CI에서는 건너뛰면 DB 테스트 없이 통과로 보이므로 실패시킨다
+        if os.environ.get("REQUIRE_TEST_DB"):
+            raise
         pytest.skip("테스트 DB에 연결할 수 없음 (docker compose up -d 필요)")
 
     Base.metadata.drop_all(engine)
