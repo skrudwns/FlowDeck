@@ -31,8 +31,8 @@ jobs:
       REQUIRE_TEST_DB: "1"
 
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.2
         with:
           working-directory: backend
           enable-cache: true
