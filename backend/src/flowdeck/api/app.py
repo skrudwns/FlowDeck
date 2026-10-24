@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from flowdeck.api.deps import SessionDep
-from flowdeck.api.routes import products
+from flowdeck.api.routes import products, snapshots
 
 
 def create_app() -> FastAPI:
@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(products.router)
+    app.include_router(snapshots.router)
     return app
 
 

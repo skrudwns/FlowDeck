@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
@@ -5,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import distinct_on
 
 from flowdeck.api.deps import SessionDep
-from flowdeck.api.schemas import LatestResult, ProductOut
+from flowdeck.api.schemas import LatestResult, PricePoint, ProductOut
 from flowdeck.models import PriceSnapshot, Product
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -64,3 +65,35 @@ def get_product(product_id: int, session: SessionDep) -> ProductOut:
     if product is None:
         raise HTTPException(status_code=404, detail="상품을 찾지 못함")
     return _to_out(product, _latest_results(session, [product.id]).get(product.id))
+
+
+@router.get("/{product_id}/prices")
+def list_prices(
+    product_id: int,
+    session: SessionDep,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    # 매시 수집이면 한 달에 약 720개. 차트 한 화면에 충분하도록 잡았다
+    limit: Annotated[int, Query(ge=1, le=2000)] = 500,
+) -> list[PricePoint]:
+    """가격 이력. 시간 오름차순이고, limit을 넘으면 가장 최근 것부터 자른다."""
+    if session.get(Product, product_id) is None:
+        raise HTTPException(status_code=404, detail="상품을 찾지 못함")
+    query = select(PriceSnapshot).where(PriceSnapshot.product_id == product_id)
+    if since is not None:
+        query = query.where(PriceSnapshot.collected_at >= since)
+    if until is not None:
+        query = query.where(PriceSnapshot.collected_at < until)
+    rows = session.scalars(
+        query.order_by(PriceSnapshot.collected_at.desc(), PriceSnapshot.id.desc()).limit(limit)
+    ).all()
+    return [
+        PricePoint(
+            snapshot_id=s.id,
+            collected_at=s.collected_at,
+            status=s.status,
+            lowest_price=s.lowest_price,
+            offer_count=s.offer_count,
+        )
+        for s in reversed(rows)
+    ]
