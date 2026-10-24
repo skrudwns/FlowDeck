@@ -21,7 +21,8 @@
 
 - 서버 컴포넌트에서 API를 호출한다. 브라우저가 API를 직접 부르지 않으니 CORS 설정이 필요 없고 API 주소도 브라우저에 드러나지 않는다.
 - API 주소는 환경 변수 `FLOWDECK_API_URL`.
-- 데이터는 매시 바뀌므로 요청마다 새로 가져온다 (`cache: "no-store"`). 캐시는 느려지면 그때 본다.
+- 데이터는 매시 바뀌므로 요청마다 새로 가져온다. 캐시는 느려지면 그때 본다.
+- 처음에는 `cache: "no-store"`를 붙이려고 했다. 생성된 프로젝트의 `AGENTS.md`가 "이 버전의 Next.js는 알던 것과 다르니 `node_modules/next/dist/docs/`를 먼저 읽으라"고 해서 읽어 보니, Next.js 16은 `cacheComponents`가 켜져 있으면 fetch가 기본으로 캐시되지 않고, 요청마다 가져오는 데이터와 `params`·`searchParams`는 `<Suspense>` 안에서 읽어야 했다. 그래서 각 화면은 정적인 틀을 먼저 그리고, 데이터 부분은 `<Suspense>`로 감싸 요청 때 채운다. 빌드할 때 API 서버가 없어도 된다.
 
 ### API 타입
 
