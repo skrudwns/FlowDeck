@@ -12,11 +12,13 @@
   - 상품마다 최저가, 판매처 수, 상위 판매처(페이지에 나오는 만큼, 지금까지 본 최대는 10곳)의 판매처 이름·가격·배송비
   - 실행마다 성공·실패 여부와 실패 원인을 기록한다.
 - 수집 대상은 [backend/targets/danawa.txt](backend/targets/danawa.txt) 파일로 관리한다. 파일을 고쳐서 main에 합치면 다음 수집부터 반영된다.
+- 수집이 끝날 때마다 Healthchecks.io로 신호를 보낸다. 신호가 끊기거나 문제가 있으면 이메일로 알림이 온다.
+- 읽기 전용 포털 API(FastAPI): 상품과 최근 결과, 가격 이력, 판매처 가격, 수집 실행 이력. 아직 로컬에서만 띄운다.
 - push와 PR마다 린트와 테스트가 돈다. DB 테스트는 실제 Postgres에서 돈다.
 
 ## 아직 없는 것
 
-- 포털 화면과 API (작업 목록, 실행 이력, 데이터 조회, 수동 실행, 알림 설정)
+- 포털 화면 (작업 목록, 실행 이력, 데이터 조회), 제어 기능 (수동 실행, 주기 변경, 알림 설정)
 - 가격 분석 (급락 감지, 할인 패턴 등). 데이터가 몇 주 쌓인 뒤 시작한다.
 - 공개 데모용 연습 쇼핑몰. 다나와에서 모은 데이터는 공개하지 않는다.
 
@@ -45,17 +47,18 @@ flowchart LR
 
 | 영역 | 사용 | 근거 |
 |---|---|---|
-| 백엔드 | Python 3.13 | [ADR-0001](docs/adr/0001-tech-stack.md) |
+| 백엔드 | Python 3.13, FastAPI | [ADR-0001](docs/adr/0001-tech-stack.md), [ADR-0008](docs/adr/0008-portal-api-structure.md) |
 | 패키지 관리 | uv | 다른 도구와 비교하지 않고 골랐다 ([일지 10-23](docs/devlog/2026-10-23.md)) |
 | 수집 | httpx, selectolax | httpx는 ADR-0001에서 정했다. selectolax는 비교 없이 골랐다 ([일지 10-24](docs/devlog/2026-10-24.md)) |
 | DB | PostgreSQL 17, SQLAlchemy, Alembic | [ADR-0001](docs/adr/0001-tech-stack.md), [ADR-0005](docs/adr/0005-collector-data-model.md) |
 | 실행 | GitHub Actions, Neon, cron-job.org | [ADR-0003](docs/adr/0003-collector-runtime.md), [ADR-0006](docs/adr/0006-external-cron-trigger.md) |
+| 감시 | Healthchecks.io | [ADR-0007](docs/adr/0007-collection-monitoring.md) |
 | 웹 (예정) | Next.js, TypeScript | [ADR-0001](docs/adr/0001-tech-stack.md) |
 
 ## 저장소 구조
 
 ```
-backend/     수집기, DB 모델, 마이그레이션, CLI
+backend/     수집기, 포털 API, DB 모델, 마이그레이션, CLI
   targets/   수집 대상 상품 목록
 docs/        개발 기록 (ADR, 트러블슈팅, 일지, 분석 노트)
 infra/       로컬 Postgres 초기화 SQL
