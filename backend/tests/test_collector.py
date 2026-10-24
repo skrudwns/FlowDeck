@@ -4,8 +4,8 @@ import pytest
 from sqlalchemy import select
 
 from flowdeck.collector import run_collection
-from flowdeck.danawa.client import Blocked, Response
 from flowdeck.models import CollectionRun, PriceSnapshot, Product
+from flowdeck.polite_http import Blocked, Response
 
 PAGE = (Path(__file__).parent / "fixtures" / "danawa_product.html").read_text(encoding="utf-8")
 

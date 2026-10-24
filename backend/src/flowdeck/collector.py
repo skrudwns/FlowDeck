@@ -14,9 +14,9 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from flowdeck.danawa.client import Blocked, DisallowedByRobots, Response
 from flowdeck.danawa.parser import ParseError, parse_product_page
 from flowdeck.models import CollectionRun, PriceSnapshot, Product, SellerPrice
+from flowdeck.polite_http import Blocked, DisallowedByRobots, Response
 
 SOURCE = "danawa"
 
