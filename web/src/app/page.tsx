@@ -96,7 +96,7 @@ function Flow({ run }: { run: RunDetail | null }) {
     },
     {
       name: "저장",
-      detail: "Postgres(Neon)",
+      detail: "Postgres",
       status: !run ? "unknown" : run.finished_at ? "ok" : "failed",
       note: run ? `결과 ${saved}건 기록, ${formatDuration(run.started_at, run.finished_at)}` : "",
     },
