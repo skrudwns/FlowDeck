@@ -24,6 +24,14 @@ uv run flowdeck collect                            # 한 번 수집
 - 수집이 끝나면 결과를 판정해서 Healthchecks.io에 신호를 보낸다. 문제가 있으면 `/fail`, 신호가 끊기면 Healthchecks.io가 알린다. 신호 주소는 `HEALTHCHECK_URL`이고, 없으면 보내지 않는다 (`docs/adr/0007-collection-monitoring.md`).
 - 지키는 원칙: 소수 상품, 요청 사이 3초, robots.txt 확인, 403/429를 받으면 멈춤, 가격·판매처·시각만 저장. 자세한 이유는 `docs/adr/0004-real-data-source-alternatives.md`.
 
+## 포털 API
+
+```bash
+uv run uvicorn flowdeck.api.app:app --reload   # http://localhost:8000/docs
+```
+
+읽기 전용이다. 상품 목록과 최근 결과, 가격 이력, 수집 한 번의 판매처 가격, 수집 실행 이력을 준다. 경로와 규칙은 `docs/adr/0008-portal-api-structure.md`.
+
 ## 테스트
 
 ```bash
