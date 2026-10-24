@@ -65,7 +65,7 @@ class PriceSnapshot(Base):
     run_id: Mapped[int] = mapped_column(ForeignKey("collection_runs.id"))
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    # ok / parse_failed / http_error / blocked
+    # ok / parse_failed / http_error / blocked / disallowed
     status: Mapped[str] = mapped_column(String(20))
     http_status: Mapped[int | None] = mapped_column(SmallInteger)
     lowest_price: Mapped[int | None] = mapped_column(Integer)
