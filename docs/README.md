@@ -18,6 +18,7 @@
 ## 트러블슈팅
 
 - [TS-0001](troubleshooting/0001-amended-commit-already-pushed.md) push된 커밋을 amend해서 로컬과 원격 브랜치가 갈라짐
+- [TS-0002](troubleshooting/0002-setup-uv-major-tag-missing.md) CI가 시작하자마자 실패, setup-uv@v10을 찾지 못함
 
 ## 분석 노트
 
