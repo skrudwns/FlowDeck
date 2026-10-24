@@ -26,3 +26,22 @@ def session_factory():
     yield make_session_factory(engine)
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+
+@pytest.fixture
+def api(session_factory):
+    """테스트 DB를 쓰는 API 클라이언트."""
+    from fastapi.testclient import TestClient
+
+    from flowdeck.api.app import create_app
+    from flowdeck.api.deps import get_session
+
+    app = create_app()
+
+    def test_session():
+        with session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = test_session
+    with TestClient(app) as client:
+        yield client
