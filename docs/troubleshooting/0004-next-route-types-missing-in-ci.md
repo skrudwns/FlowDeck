@@ -20,16 +20,11 @@ Cannot find name 'LayoutProps'.
 | 가설 | 확인 방법 | 결과 |
 |---|---|---|
 | 두 타입은 Next.js가 생성하는 전역 타입이다 | `node_modules/next/dist/docs/.../02-typescript.md` | 맞음. "generated during `next dev`, `next build`, or via `next typegen`" |
-| 로컬에는 생성된 파일이 있다 | `web/.next/types/`, `web/next-env.d.ts` | 맞음. `next-env.d.ts`가 `./.next/types/routes.d.ts`를 import하고, 그 파일이 개발 서버를 띄울 때 생겼다 |
+| 로컬에는 생성된 파일이 있다 | `web/.next/types/`, `web/next-env.d.ts` | 맞음. `next-env.d.ts`가 `./.next/types/routes.d.ts`를 import하고, 둘 다 개발 서버를 띄울 때 생겼다 |
+| 로컬에서 재현된다 | `rm -rf .next` 후 `tsc --noEmit` | 맞음. 같은 `Cannot find name` 오류 |
 | CI는 생성 전에 검사한다 | ci.yml 순서 | 맞음. `npm ci` → 타입 확인 → lint → typecheck(`tsc --noEmit`) → build. `.next`는 저장소에 없다 |
 
-같은 문서에서 하나 더 발견했다:
-
-```
-`next-env.d.ts` is managed by Next.js. ... Add it to `.gitignore`. If your project already tracks the file, remove it from Git.
-```
-
-create-next-app이 만든 그대로 커밋하면서 `next-env.d.ts`도 저장소에 들어갔다.
+같은 문서에 `next-env.d.ts`는 `.gitignore`에 넣고 git에서 빼라고 되어 있다. 이걸 보고 처음에는 create-next-app이 만든 그대로 커밋하면서 `next-env.d.ts`도 저장소에 들어갔다고 이 문서에 적었다. 확인해 보니 틀렸다. create-next-app의 `.gitignore`에 이미 들어 있어서 커밋된 적이 없었다 (`git ls-files web | grep next-env` 결과 0). 그래서 CI에는 `next-env.d.ts`도 `.next/types`도 없었다.
 
 ## 원인
 
@@ -40,3 +35,4 @@ create-next-app이 만든 그대로 커밋하면서 `next-env.d.ts`도 저장소
 ## 배운 것
 
 - 로컬에서 통과한 검사가 생성된 파일에 기대고 있지 않은지 본다. 이번 경우 `rm -rf .next`한 뒤 검사를 돌려 봤으면 로컬에서 먼저 잡혔다.
+- 문서에서 읽은 일반론("이 파일이 커밋돼 있으면 빼라")을 이 저장소에 그대로 적용하기 전에 실제 상태를 확인한다.
