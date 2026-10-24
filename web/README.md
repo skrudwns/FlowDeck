@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# web
 
-## Getting Started
+FlowDeck 포털 웹. Next.js 16 (App Router), TypeScript, Tailwind CSS. 구조와 이유는 `docs/adr/0009-portal-web-structure.md`.
 
-First, run the development server:
+## 실행
+
+포털 API가 먼저 떠 있어야 한다 (`backend/README.md`).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+FLOWDECK_API_URL=http://localhost:8000 npm run dev   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 화면
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 경로 | 내용 |
+|---|---|
+| `/` | 작업 목록(주기, 다음 실행, 마지막 실행), 수집 → 가공 → 저장 → 알림 흐름 |
+| `/runs`, `/runs/[id]` | 실행 이력, 상품별 결과와 실패 원인 |
+| `/products`, `/products/[id]` | 상품 가격 표(검색, 상태 거르기), 최저가 차트, 판매처 가격 |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API 타입
 
-## Learn More
+백엔드 API가 바뀌면 타입을 다시 만든다. 생성물(`openapi.json`, `src/lib/api/schema.d.ts`)은 커밋한다. CI가 다시 만들어 보고 다르면 실패한다.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run gen:api
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 검사
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm run typecheck
+npm run build   # API 서버 없이 된다
+```
 
-## Deploy on Vercel
+## 참고
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 이 버전의 Next.js는 `cacheComponents`가 켜져 있어서, 요청마다 가져오는 데이터와 `params`·`searchParams`는 `<Suspense>` 안에서 읽는다.
+- 버전별 문서는 `node_modules/next/dist/docs/`에 있다 (`AGENTS.md`).
