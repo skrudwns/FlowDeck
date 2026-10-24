@@ -3,6 +3,8 @@
 - 상품 하나가 끝날 때마다 커밋해서, 중간에 멈춰도 그때까지 결과는 남는다.
 - 실패도 상태와 원인을 price_snapshots에 남긴다 (#2 완료 기준).
 - 차단(403, 429)을 받으면 남은 상품은 요청하지 않고 멈춘다 (ADR-0004 수집 원칙 5).
+- 상품 목록을 찾는 수집 대상은 먼저 목록을 돌고 DB 상품을 맞춘다.
+  목록을 못 읽으면 그 실행은 실패 (ADR-0010).
 """
 
 import logging
@@ -15,7 +17,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from flowdeck.models import CollectionRun, PriceSnapshot, Product, SellerPrice
 from flowdeck.polite_http import Blocked, DisallowedByRobots
-from flowdeck.sources import ParseError, Source
+from flowdeck.sources import ListedProduct, ParseError, Source
+from flowdeck.targets import sync_products
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +64,16 @@ def run_collection(
 def _collect_all(
     session: Session, run: CollectionRun, source: Source, now: Callable[[], datetime]
 ) -> None:
+    if source.discover is not None:
+        try:
+            listed = source.discover()
+        except (Blocked, DisallowedByRobots, httpx.HTTPError, ParseError) as e:
+            run.status = "failed"
+            run.error_message = f"상품 목록 수집 실패: {e}"
+            log.warning(run.error_message)
+            return
+        _sync_listed(session, source.name, listed)
+
     products = session.scalars(
         select(Product).where(Product.source == source.name, Product.active).order_by(Product.id)
     ).all()
@@ -114,6 +127,16 @@ def _collect_all(
         run.status = "failed"
     else:
         run.status = "partial"
+
+
+def _sync_listed(session: Session, source: str, listed: list[ListedProduct]) -> None:
+    """목록에 있는 상품은 추가하거나 다시 활성화하고, 목록에서 사라진 상품은 비활성화한다."""
+    sync_products(session, source, [p.product_id for p in listed])
+    names = {p.product_id: p.name for p in listed}
+    for product in session.scalars(select(Product).where(Product.source == source)):
+        if not product.name and names.get(product.source_product_id):
+            product.name = names[product.source_product_id]
+    session.commit()
 
 
 def _collect_one(source: Source, product: Product, now: Callable[[], datetime]) -> PriceSnapshot:

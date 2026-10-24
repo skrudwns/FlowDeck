@@ -36,7 +36,16 @@ class ProductPage:
 
 
 @dataclass(frozen=True)
+class ListedProduct:
+    product_id: str
+    name: str
+
+
+@dataclass(frozen=True)
 class Source:
     name: str
     fetch_product: Callable[[str], Response]
     parse: Callable[[str], ProductPage]
+    # 사이트의 상품 목록을 돌며 수집할 상품을 찾는 대상(연습 쇼핑몰)만 둔다.
+    # 없으면 DB에 등록된 상품을 수집한다 (다나와: 대상 목록 파일)
+    discover: Callable[[], list[ListedProduct]] | None = None

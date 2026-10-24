@@ -7,7 +7,7 @@ from flowdeck.collector import run_collection
 from flowdeck.danawa.parser import parse_product_page
 from flowdeck.models import CollectionRun, PriceSnapshot, Product, SellerPrice
 from flowdeck.polite_http import Blocked, Response
-from flowdeck.sources import Source
+from flowdeck.sources import ListedProduct, Source
 
 PAGE = (Path(__file__).parent / "fixtures" / "danawa_product.html").read_text(encoding="utf-8")
 
@@ -138,3 +138,65 @@ def test_closes_run_on_unexpected_error(session_factory):
         run = session.scalar(select(CollectionRun))
         assert run.status == "failed"
         assert run.finished_at is not None
+
+
+def listing_source(fetcher, listed):
+    """상품 목록을 찾는 수집 대상. listed가 예외면 목록 수집이 그 예외로 실패한다."""
+
+    def discover():
+        if isinstance(listed, Exception):
+            raise listed
+        return [ListedProduct(product_id=i, name=f"상품 {i}") for i in listed]
+
+    return Source(
+        name="danawa",
+        fetch_product=fetcher.fetch_product,
+        parse=parse_product_page,
+        discover=discover,
+    )
+
+
+def products(session_factory):
+    with session_factory() as session:
+        rows = session.scalars(select(Product).order_by(Product.source_product_id)).all()
+        return [(p.source_product_id, p.active) for p in rows]
+
+
+def test_discovered_products_are_added_and_collected(session_factory):
+    fetcher = FakeFetcher({"1": ok(), "2": ok()})
+
+    run = run_collection(session_factory, listing_source(fetcher, ["1", "2"]))
+
+    assert run.status == "success"
+    assert fetcher.requested == ["1", "2"]
+    assert products(session_factory) == [("1", True), ("2", True)]
+
+
+def test_products_missing_from_listing_are_deactivated(session_factory):
+    add_products(session_factory, "1", "2")
+    fetcher = FakeFetcher({"1": ok()})
+
+    run_collection(session_factory, listing_source(fetcher, ["1"]))
+
+    assert fetcher.requested == ["1"]
+    assert products(session_factory) == [("1", True), ("2", False)]
+
+
+def test_name_from_listing_is_kept_when_page_has_one(session_factory):
+    run_collection(session_factory, listing_source(FakeFetcher({"1": ok()}), ["1"]))
+
+    with session_factory() as session:
+        # 목록에서 먼저 이름을 채우고, 상품 페이지 이름으로 덮어쓰지 않는다
+        assert session.scalar(select(Product.name)) == "상품 1"
+
+
+def test_run_fails_when_listing_cannot_be_read(session_factory):
+    add_products(session_factory, "1")
+    fetcher = FakeFetcher({"1": ok()})
+
+    run = run_collection(session_factory, listing_source(fetcher, Blocked(429)))
+
+    assert run.status == "failed"
+    assert run.error_message == "상품 목록 수집 실패: 차단 응답 429"
+    assert fetcher.requested == []
+    assert products(session_factory) == [("1", True)]
