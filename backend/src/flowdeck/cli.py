@@ -5,7 +5,8 @@ uv run flowdeck products add 109680239 122644105
 uv run flowdeck products list
 uv run flowdeck products deactivate 109680239
 uv run flowdeck collect --trigger manual
-    uv run flowdeck openapi ../web/openapi.json
+uv run flowdeck collect --source mockshop --mockshop-url http://127.0.0.1:8020
+uv run flowdeck openapi ../web/openapi.json
 """
 
 import argparse
@@ -20,8 +21,13 @@ from flowdeck.config import get_settings
 from flowdeck.danawa import SOURCE, danawa_source
 from flowdeck.danawa.client import DanawaClient
 from flowdeck.db import make_engine, make_session_factory
+from flowdeck.mockshop import SOURCE as MOCKSHOP
+from flowdeck.mockshop import mockshop_source
+from flowdeck.mockshop.client import DEFAULT_BASE_URL as DEFAULT_MOCKSHOP_URL
+from flowdeck.mockshop.client import MockShopClient
 from flowdeck.models import Product
 from flowdeck.monitor import evaluate_run, send_ping
+from flowdeck.sources import Source
 from flowdeck.targets import read_targets, sync_products
 
 
@@ -43,7 +49,9 @@ def main(argv: list[str] | None = None) -> int:
     deactivate.add_argument("pcodes", nargs="+")
 
     collect = commands.add_parser("collect", help="수집 한 번 실행")
+    collect.add_argument("--source", choices=[SOURCE, MOCKSHOP], default=SOURCE)
     collect.add_argument("--trigger", choices=["schedule", "manual"], default="manual")
+    collect.add_argument("--mockshop-url", default=DEFAULT_MOCKSHOP_URL, help="연습 쇼핑몰 주소")
     collect.add_argument("--delay", type=float, default=3.0, help="요청 사이 간격(초)")
 
     openapi = commands.add_parser(
@@ -58,7 +66,16 @@ def main(argv: list[str] | None = None) -> int:
     session_factory = make_session_factory(make_engine())
 
     if args.command == "collect":
-        return _collect(session_factory, args.trigger, args.delay)
+        if args.source == MOCKSHOP:
+            client = MockShopClient(args.mockshop_url, delay_seconds=args.delay)
+            source = mockshop_source(client)
+        else:
+            client = DanawaClient(delay_seconds=args.delay)
+            source = danawa_source(client)
+        try:
+            return _collect(session_factory, source, args.trigger)
+        finally:
+            client.close()
     if args.action == "sync":
         return _sync(session_factory, args.file)
     if args.action == "add":
@@ -68,19 +85,16 @@ def main(argv: list[str] | None = None) -> int:
     return _list(session_factory)
 
 
-def _collect(session_factory, trigger: str, delay: float) -> int:
+def _collect(session_factory, source: Source, trigger: str) -> int:
     healthcheck = get_settings().healthcheck_url
     ping_url = healthcheck.get_secret_value() if healthcheck else None
 
-    client = DanawaClient(delay_seconds=delay)
     try:
-        run = run_collection(session_factory, danawa_source(client), trigger=trigger)
+        run = run_collection(session_factory, source, trigger=trigger)
     except Exception as e:
         if ping_url:
-            send_ping(ping_url, ok=False, body=f"수집 중 예상하지 못한 오류: {e!r}")
+            send_ping(ping_url, ok=False, body=f"{source.name} 수집 중 예상하지 못한 오류: {e!r}")
         raise
-    finally:
-        client.close()
 
     with session_factory() as session:
         report = evaluate_run(session, run.id)
