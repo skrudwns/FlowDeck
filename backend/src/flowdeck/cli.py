@@ -5,6 +5,7 @@ uv run flowdeck products add 109680239 122644105
 uv run flowdeck products list
 uv run flowdeck products deactivate 109680239
 uv run flowdeck collect --trigger manual
+    uv run flowdeck openapi ../web/openapi.json
 """
 
 import argparse
@@ -44,7 +45,14 @@ def main(argv: list[str] | None = None) -> int:
     collect.add_argument("--trigger", choices=["schedule", "manual"], default="manual")
     collect.add_argument("--delay", type=float, default=3.0, help="요청 사이 간격(초)")
 
+    openapi = commands.add_parser(
+        "openapi", help="포털 API의 OpenAPI 문서를 파일로 저장 (웹 타입 생성용)"
+    )
+    openapi.add_argument("out", type=Path)
+
     args = parser.parse_args(argv)
+    if args.command == "openapi":
+        return _openapi(args.out)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     session_factory = make_session_factory(make_engine())
 
@@ -87,6 +95,18 @@ def _collect(session_factory, trigger: str, delay: float) -> int:
 
     # 문제가 있으면 GitHub Actions에서도 실패로 보이게 종료 코드 1
     return 0 if report.ok else 1
+
+
+def _openapi(out: Path) -> int:
+    """서버를 띄우지 않고 앱 정의에서 바로 뽑는다. DB에는 접속하지 않는다."""
+    import json
+
+    from flowdeck.api.app import create_app
+
+    text = json.dumps(create_app().openapi(), ensure_ascii=False, indent=2) + "\n"
+    out.write_text(text, encoding="utf-8")
+    print(f"저장: {out}")
+    return 0
 
 
 def _sync(session_factory, path: Path) -> int:
