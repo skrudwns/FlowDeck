@@ -2,11 +2,20 @@ name: 다나와 가격 수집
 
 # 실행 위치와 무료 한도: docs/adr/0003-collector-runtime.md
 # 수집 원칙: docs/adr/0004-real-data-source-alternatives.md
+#
+# GitHub Actions 예약 실행(schedule)은 이 저장소에서 돌지 않았다 (TS-0003).
+# 그래서 외부 cron 서비스가 매시 17분에 GitHub API로 workflow_dispatch를 호출한다 (ADR-0006).
+# 이때 trigger 입력으로 schedule을 넘겨서 실행 기록에서 직접 누른 수동 실행과 구분한다.
 on:
-  schedule:
-    # GitHub 문서: 매시 정각은 부하가 높아 예약 실행이 늦어지거나 빠질 수 있으니 다른 분에 돌리라고 한다
-    - cron: "17 * * * *"
   workflow_dispatch:
+    inputs:
+      trigger:
+        description: 실행 기록에 남길 실행 종류
+        type: choice
+        options:
+          - manual
+          - schedule
+        default: manual
 
 # 이전 실행이 아직 돌고 있으면 겹치지 않게 기다린다
 concurrency:
@@ -38,4 +47,7 @@ jobs:
         run: uv run flowdeck products sync targets/danawa.txt
 
       - name: 수집
-        run: uv run flowdeck collect --trigger ${{ github.event_name == 'schedule' && 'schedule' || 'manual' }}
+        env:
+          # 입력값을 명령어에 직접 끼워 넣지 않고 환경 변수로 넘긴다
+          TRIGGER: ${{ inputs.trigger }}
+        run: uv run flowdeck collect --trigger "$TRIGGER"
