@@ -31,6 +31,8 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # 수집 결과 신호 (ADR-0007). 없으면 신호 없이 수집만 한다
+      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
 
     steps:
       - uses: actions/checkout@v7.0.1

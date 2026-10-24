@@ -26,6 +26,18 @@ def test_database_url_is_required(monkeypatch):
         Settings(_env_file=None)
 
 
+def test_healthcheck_url_is_optional_and_hidden(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@localhost:5433/db")
+    monkeypatch.delenv("HEALTHCHECK_URL", raising=False)
+    assert Settings(_env_file=None).healthcheck_url is None
+
+    monkeypatch.setenv("HEALTHCHECK_URL", "https://hc-ping.com/secret-uuid")
+    settings = Settings(_env_file=None)
+
+    assert settings.healthcheck_url.get_secret_value() == "https://hc-ping.com/secret-uuid"
+    assert "secret-uuid" not in repr(settings)
+
+
 def test_database_url_is_hidden_in_repr(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:password123@localhost:5433/db")
 
