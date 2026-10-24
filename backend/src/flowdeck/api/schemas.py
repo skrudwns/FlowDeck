@@ -68,3 +68,14 @@ class RunProductResult(_FromORM):
 
 class RunDetail(RunOut):
     results: list[RunProductResult]
+
+
+class JobOut(BaseModel):
+    id: str
+    name: str
+    source: str
+    description: str
+    schedule: str
+    next_run_at: datetime
+    active_products: int
+    last_run: RunOut | None
