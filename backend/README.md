@@ -21,6 +21,7 @@ uv run flowdeck collect                            # 한 번 수집
 
 - 수집 대상은 `targets/danawa.txt`에서 관리한다. 파일에서 뺀 상품은 지우지 않고 비활성화한다.
 - 운영 수집은 GitHub Actions(`.github/workflows/collect.yml`)에서 Neon DB로 돈다. 외부 cron 서비스(cron-job.org)가 매시 17분에 GitHub API로 이 워크플로를 실행한다. GitHub 예약 실행은 이 저장소에서 돌지 않아서 쓰지 않는다 (`docs/adr/0006-external-cron-trigger.md`).
+- 수집이 끝나면 결과를 판정해서 Healthchecks.io에 신호를 보낸다. 문제가 있으면 `/fail`, 신호가 끊기면 Healthchecks.io가 알린다. 신호 주소는 `HEALTHCHECK_URL`이고, 없으면 보내지 않는다 (`docs/adr/0007-collection-monitoring.md`).
 - 지키는 원칙: 소수 상품, 요청 사이 3초, robots.txt 확인, 403/429를 받으면 멈춤, 가격·판매처·시각만 저장. 자세한 이유는 `docs/adr/0004-real-data-source-alternatives.md`.
 
 ## 테스트
