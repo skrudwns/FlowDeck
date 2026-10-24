@@ -2,7 +2,7 @@
 
 - 날짜: 2026-10-24
 - 관련: #14, PR #22, ADR-0009
-- 상태: 미해결
+- 상태: 해결
 
 > 요약: Next.js 라우트 타입(`PageProps`, `LayoutProps`)은 `next dev`·`next build`·`next typegen`이 만든다. 로컬에는 개발 서버가 만들어 둔 게 있었고, CI는 빌드 전에 `tsc`를 돌려서 없었다.
 
@@ -31,6 +31,11 @@ Cannot find name 'LayoutProps'.
 로컬 검사는 개발 서버가 만들어 둔 `.next/types`에 기대서 통과했다. 깨끗한 환경(CI)에는 그 파일이 없다.
 
 ## 해결
+
+`typecheck` 스크립트를 `next typegen && tsc --noEmit`으로 바꿨다 (커밋 `508f334`). 타입 검사 전에 라우트 타입을 만든다.
+
+- 로컬: `rm -rf .next` 후 `npm run typecheck` 통과
+- CI: web 작업의 API 타입 확인, lint, typecheck, build가 모두 통과 (CI #41, #42)
 
 ## 배운 것
 
