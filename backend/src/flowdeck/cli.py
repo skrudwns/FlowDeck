@@ -15,8 +15,9 @@ from pathlib import Path
 
 from sqlalchemy import select
 
-from flowdeck.collector import SOURCE, run_collection
+from flowdeck.collector import run_collection
 from flowdeck.config import get_settings
+from flowdeck.danawa import SOURCE, danawa_source
 from flowdeck.danawa.client import DanawaClient
 from flowdeck.db import make_engine, make_session_factory
 from flowdeck.models import Product
@@ -73,7 +74,7 @@ def _collect(session_factory, trigger: str, delay: float) -> int:
 
     client = DanawaClient(delay_seconds=delay)
     try:
-        run = run_collection(session_factory, client, trigger=trigger)
+        run = run_collection(session_factory, danawa_source(client), trigger=trigger)
     except Exception as e:
         if ping_url:
             send_ping(ping_url, ok=False, body=f"수집 중 예상하지 못한 오류: {e!r}")
