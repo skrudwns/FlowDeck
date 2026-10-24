@@ -15,9 +15,11 @@ from pathlib import Path
 from sqlalchemy import select
 
 from flowdeck.collector import SOURCE, run_collection
+from flowdeck.config import get_settings
 from flowdeck.danawa.client import DanawaClient
 from flowdeck.db import make_engine, make_session_factory
 from flowdeck.models import Product
+from flowdeck.monitor import evaluate_run, send_ping
 from flowdeck.targets import read_targets, sync_products
 
 
@@ -58,20 +60,33 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _collect(session_factory, trigger: str, delay: float) -> int:
+    healthcheck = get_settings().healthcheck_url
+    ping_url = healthcheck.get_secret_value() if healthcheck else None
+
     client = DanawaClient(delay_seconds=delay)
     try:
         run = run_collection(session_factory, client, trigger=trigger)
+    except Exception as e:
+        if ping_url:
+            send_ping(ping_url, ok=False, body=f"수집 중 예상하지 못한 오류: {e!r}")
+        raise
     finally:
         client.close()
-    print(
-        f"run {run.id}: {run.status} "
-        f"({run.products_succeeded}/{run.products_total}) "
-        f"{run.finished_at - run.started_at}"
-    )
-    if run.error_message:
-        print(run.error_message)
-    # 전부 실패하면 GitHub Actions에서 실패로 보이게 종료 코드 1
-    return 1 if run.status == "failed" else 0
+
+    with session_factory() as session:
+        report = evaluate_run(session, run.id)
+    print(report.summary)
+    print(f"걸린 시간: {run.finished_at - run.started_at}")
+
+    if ping_url:
+        sent = send_ping(ping_url, ok=report.ok, body=report.summary)
+        kind = "정상" if report.ok else "fail"
+        print(f"Healthchecks 신호({kind}): {'보냄' if sent else '전송 실패'}")
+    else:
+        print("HEALTHCHECK_URL이 없어서 Healthchecks 신호를 보내지 않음")
+
+    # 문제가 있으면 GitHub Actions에서도 실패로 보이게 종료 코드 1
+    return 0 if report.ok else 1
 
 
 def _sync(session_factory, path: Path) -> int:
