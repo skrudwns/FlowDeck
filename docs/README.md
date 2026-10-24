@@ -17,6 +17,7 @@
 - [ADR-0006](adr/0006-external-cron-trigger.md) 수집 주기 실행: 외부 cron이 workflow_dispatch 호출
 - [ADR-0007](adr/0007-collection-monitoring.md) 수집 감시와 알림: Healthchecks.io
 - [ADR-0008](adr/0008-portal-api-structure.md) 포털 API 구조: 동기 엔드포인트, 읽기 전용 경로
+- [ADR-0009](adr/0009-portal-web-structure.md) 포털 웹 구조: Next.js 서버 컴포넌트, OpenAPI 타입
 
 ## 트러블슈팅
 
