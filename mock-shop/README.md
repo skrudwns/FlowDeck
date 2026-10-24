@@ -7,6 +7,7 @@ FlowDeck 공개 데모용 연습 쇼핑몰 "연습마켓". 상품과 판매처�
 ```bash
 uv sync
 uv run mock-shop serve --port 8020   # http://127.0.0.1:8020/products
+uv run mock-shop serve --at 2026-10-25T14:00+09:00   # 가격 기준 시각 고정. 화면 확인용
 ```
 
 ## 페이지
