@@ -1,0 +1,41 @@
+name: 다나와 가격 수집
+
+# 실행 위치와 무료 한도: docs/adr/0003-collector-runtime.md
+# 수집 원칙: docs/adr/0004-real-data-source-alternatives.md
+on:
+  schedule:
+    # GitHub 문서: 매시 정각은 부하가 높아 예약 실행이 늦어지거나 빠질 수 있으니 다른 분에 돌리라고 한다
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+# 이전 실행이 아직 돌고 있으면 겹치지 않게 기다린다
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          working-directory: backend
+          enable-cache: true
+      - run: uv sync --frozen --no-dev
+
+      - name: DB 스키마 최신으로
+        run: uv run alembic upgrade head
+
+      - name: 수집 대상 목록 반영
+        run: uv run flowdeck products sync targets/danawa.txt
+
+      - name: 수집
+        run: uv run flowdeck collect --trigger ${{ github.event_name == 'schedule' && 'schedule' || 'manual' }}
