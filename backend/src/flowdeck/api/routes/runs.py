@@ -16,11 +16,14 @@ def list_runs(
     session: SessionDep,
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
+    source: Annotated[str | None, Query(description="수집 대상 (danawa, mockshop)")] = None,
 ) -> list[RunOut]:
     """수집 실행 이력. 최신순."""
+    query = select(CollectionRun)
+    if source is not None:
+        query = query.where(CollectionRun.source == source)
     rows = session.scalars(
-        select(CollectionRun)
-        .order_by(CollectionRun.started_at.desc(), CollectionRun.id.desc())
+        query.order_by(CollectionRun.started_at.desc(), CollectionRun.id.desc())
         .limit(limit)
         .offset(offset)
     ).all()

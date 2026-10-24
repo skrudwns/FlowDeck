@@ -36,4 +36,12 @@ JOBS: tuple[Job, ...] = (
         description="다나와 상품 페이지에서 최저가, 판매처 수, 상위 판매처 가격을 모은다",
         minute_of_hour=17,
     ),
+    # 같은 워크플로의 다른 작업으로 다나와와 같은 시각에 돈다 (ADR-0010)
+    Job(
+        id="mockshop-prices",
+        name="연습 쇼핑몰 가격 수집",
+        source="mockshop",
+        description="연습 쇼핑몰 상품 목록을 돌며 판매처별 가격과 재고를 모은다",
+        minute_of_hour=17,
+    ),
 )

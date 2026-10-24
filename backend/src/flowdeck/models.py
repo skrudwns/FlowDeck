@@ -1,4 +1,4 @@
-"""수집 데이터 테이블. 구조와 이유는 docs/adr/0005-collector-data-model.md."""
+"""수집 데이터 테이블. 구조와 이유는 docs/adr/0005-collector-data-model.md, 0010-mock-shop.md."""
 
 from datetime import datetime
 
@@ -42,6 +42,8 @@ class CollectionRun(Base):
     __tablename__ = "collection_runs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # 수집 대상: danawa / mockshop (ADR-0010)
+    source: Mapped[str] = mapped_column(String(20))
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # running / success / partial / failed
@@ -80,7 +82,7 @@ class PriceSnapshot(Base):
 
 
 class SellerPrice(Base):
-    """스냅샷의 상위 판매처. 페이지에 나오는 만큼 저장한다 (관찰한 최대 10곳)."""
+    """스냅샷의 상위 판매처. 페이지에 나오는 만큼 저장한다 (다나와는 관찰한 최대 10곳)."""
 
     __tablename__ = "seller_prices"
 
@@ -93,5 +95,7 @@ class SellerPrice(Base):
     seller_code: Mapped[str | None] = mapped_column(String(20))
     price: Mapped[int] = mapped_column(Integer)
     delivery_fee: Mapped[int | None] = mapped_column(Integer)
+    # 품절로 나온 판매처도 저장한다. 최저가와 판매처 수에는 넣지 않는다 (ADR-0010)
+    in_stock: Mapped[bool] = mapped_column(default=True, server_default="true")
 
     snapshot: Mapped[PriceSnapshot] = relationship(back_populates="sellers")

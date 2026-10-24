@@ -240,6 +240,8 @@ export interface components {
         RunDetail: {
             /** Id */
             id: number;
+            /** Source */
+            source: string;
             /**
              * Started At
              * Format: date-time
@@ -264,6 +266,8 @@ export interface components {
         RunOut: {
             /** Id */
             id: number;
+            /** Source */
+            source: string;
             /**
              * Started At
              * Format: date-time
@@ -313,6 +317,8 @@ export interface components {
             price: number;
             /** Delivery Fee */
             delivery_fee: number | null;
+            /** In Stock */
+            in_stock: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -513,6 +519,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description 수집 대상 (danawa, mockshop) */
+                source?: string | null;
             };
             header?: never;
             path?: never;

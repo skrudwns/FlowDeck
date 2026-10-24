@@ -6,7 +6,7 @@ import { PriceChart } from "@/components/price-chart";
 import { Loading, Section } from "@/components/section";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap, type PricePoint } from "@/lib/api/client";
-import { formatKst, formatKstShort, formatWon } from "@/lib/format";
+import { formatKst, formatKstShort, formatWon, sourceLabel } from "@/lib/format";
 
 export default function ProductPage({ params }: PageProps<"/products/[id]">) {
   return (
@@ -40,7 +40,8 @@ async function ProductDetail({ params }: { params: PageProps<"/products/[id]">["
       </Link>
       <h1 className="mt-2 text-2xl font-bold">{product.name ?? product.source_product_id}</h1>
       <p className="mb-6 text-sm text-zinc-500">
-        다나와 pcode {product.source_product_id} · 수집 {prices.length}회
+        {sourceLabel(product.source)} {product.source === "danawa" ? "pcode" : "상품 코드"} {product.source_product_id} ·
+        수집 {prices.length}회
       </p>
 
       <dl className="mb-8 grid grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-white p-5 sm:grid-cols-4">
@@ -65,15 +66,18 @@ async function ProductDetail({ params }: { params: PageProps<"/products/[id]">["
                 <th className="px-4 py-2">판매처</th>
                 <th className="px-4 py-2 text-right">가격</th>
                 <th className="px-4 py-2 text-right">배송비</th>
+                <th className="px-4 py-2">재고</th>
               </tr>
             </thead>
             <tbody>
               {sellers.map((s) => (
-                <tr key={s.rank} className="border-b border-zinc-100 last:border-0">
+                // 품절 판매처는 최저가와 판매처 수에 들어가지 않는다 (ADR-0010)
+                <tr key={s.rank} className={`border-b border-zinc-100 last:border-0 ${s.in_stock ? "" : "text-zinc-400"}`}>
                   <td className="px-4 py-2">{s.rank}</td>
                   <td className="px-4 py-2">{s.seller_name}</td>
                   <td className="px-4 py-2 text-right">{formatWon(s.price)}</td>
                   <td className="px-4 py-2 text-right">{s.delivery_fee === 0 ? "무료" : formatWon(s.delivery_fee)}</td>
+                  <td className="px-4 py-2">{s.in_stock ? "있음" : "품절"}</td>
                 </tr>
               ))}
             </tbody>

@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from flowdeck.danawa.parser import ParseError, SellerOffer, parse_product_page
+from flowdeck.danawa.parser import parse_product_page
+from flowdeck.sources import ParseError, SellerOffer
 
 FIXTURE = (Path(__file__).parent / "fixtures" / "danawa_product.html").read_text(encoding="utf-8")
 

@@ -41,6 +41,28 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest -v
 
+  mock-shop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mock-shop
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          working-directory: mock-shop
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -v
+      # 백엔드 파서 테스트의 HTML이 지금 쇼핑몰이 만드는 HTML과 같은지 본다 (ADR-0010)
+      - name: 백엔드 테스트용 HTML이 최신인지 확인
+        run: |
+          uv run mock-shop fixtures ../backend/tests/fixtures
+          git diff --exit-code -- ../backend/tests/fixtures
+
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 10

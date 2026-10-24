@@ -1,6 +1,6 @@
 # backend
 
-FlowDeck 백엔드. 지금은 다나와 가격 수집기가 들어 있다.
+FlowDeck 백엔드. 다나와와 연습 쇼핑몰 가격 수집기, 포털 API가 들어 있다.
 
 ## 로컬 실행
 
@@ -16,12 +16,15 @@ uv run alembic upgrade head   # 테이블 생성
 ```bash
 uv run flowdeck products sync targets/danawa.txt   # 대상 목록 파일을 DB에 반영
 uv run flowdeck products list
-uv run flowdeck collect                            # 한 번 수집
+uv run flowdeck collect                            # 다나와 한 번 수집
+uv run flowdeck collect --source mockshop          # 연습 쇼핑몰 한 번 수집 (쇼핑몰을 먼저 띄운다)
 ```
+
+- 연습 쇼핑몰은 `mock-shop/`에서 `uv run mock-shop serve --port 8020`으로 띄운다. 다른 주소면 `--mockshop-url`. 상품은 쇼핑몰 목록 페이지에서 찾으므로 대상 목록 파일이 없다 (`docs/adr/0010-mock-shop.md`).
 
 - 수집 대상은 `targets/danawa.txt`에서 관리한다. 파일에서 뺀 상품은 지우지 않고 비활성화한다.
 - 운영 수집은 GitHub Actions(`.github/workflows/collect.yml`)에서 Neon DB로 돈다. 외부 cron 서비스(cron-job.org)가 매시 17분에 GitHub API로 이 워크플로를 실행한다. GitHub 예약 실행은 이 저장소에서 돌지 않아서 쓰지 않는다 (`docs/adr/0006-external-cron-trigger.md`).
-- 수집이 끝나면 결과를 판정해서 Healthchecks.io에 신호를 보낸다. 문제가 있으면 `/fail`, 신호가 끊기면 Healthchecks.io가 알린다. 신호 주소는 `HEALTHCHECK_URL`이고, 없으면 보내지 않는다 (`docs/adr/0007-collection-monitoring.md`).
+- 수집이 끝나면 결과를 판정해서 Healthchecks.io에 신호를 보낸다. 문제가 있으면 `/fail`, 신호가 끊기면 Healthchecks.io가 알린다. 신호 주소는 `HEALTHCHECK_URL`이고, 없으면 보내지 않는다 (`docs/adr/0007-collection-monitoring.md`). 워크플로는 다나와에 `HEALTHCHECK_URL`, 연습 쇼핑몰에 `MOCKSHOP_HEALTHCHECK_URL` Secret을 넘긴다.
 - 지키는 원칙: 소수 상품, 요청 사이 3초, robots.txt 확인, 403/429를 받으면 멈춤, 가격·판매처·시각만 저장. 자세한 이유는 `docs/adr/0004-real-data-source-alternatives.md`.
 
 ## 포털 API

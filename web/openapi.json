@@ -345,6 +345,24 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "수집 대상 (danawa, mockshop)",
+              "title": "Source"
+            },
+            "description": "수집 대상 (danawa, mockshop)"
           }
         ],
         "responses": {
@@ -648,6 +666,10 @@
             "type": "integer",
             "title": "Id"
           },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
           "started_at": {
             "type": "string",
             "format": "date-time",
@@ -703,6 +725,7 @@
         "type": "object",
         "required": [
           "id",
+          "source",
           "started_at",
           "finished_at",
           "status",
@@ -719,6 +742,10 @@
           "id": {
             "type": "integer",
             "title": "Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
           },
           "started_at": {
             "type": "string",
@@ -768,6 +795,7 @@
         "type": "object",
         "required": [
           "id",
+          "source",
           "started_at",
           "finished_at",
           "status",
@@ -889,6 +917,10 @@
               }
             ],
             "title": "Delivery Fee"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock"
           }
         },
         "type": "object",
@@ -897,7 +929,8 @@
           "seller_name",
           "seller_code",
           "price",
-          "delivery_fee"
+          "delivery_fee",
+          "in_stock"
         ],
         "title": "SellerOut"
       },

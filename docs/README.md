@@ -6,6 +6,7 @@
 
 - [2026-10-23](devlog/2026-10-23.md) 주제와 작업 규칙 정함
 - [2026-10-24](devlog/2026-10-24.md) 데이터 소스를 다나와로 바꾸고 수집기 구현, 로컬 첫 수집
+- [2026-10-25](devlog/2026-10-25.md) 연습 쇼핑몰과 두 번째 수집 대상
 
 ## 기술 결정 (ADR)
 
@@ -18,6 +19,7 @@
 - [ADR-0007](adr/0007-collection-monitoring.md) 수집 감시와 알림: Healthchecks.io
 - [ADR-0008](adr/0008-portal-api-structure.md) 포털 API 구조: 동기 엔드포인트, 읽기 전용 경로
 - [ADR-0009](adr/0009-portal-web-structure.md) 포털 웹 구조: Next.js 서버 컴포넌트, OpenAPI 타입
+- [ADR-0010](adr/0010-mock-shop.md) 연습 쇼핑몰: 수집 작업 안에서 띄우고, 규칙으로 정한 가격을 크롤링
 
 ## 트러블슈팅
 

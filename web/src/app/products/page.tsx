@@ -4,9 +4,15 @@ import { Suspense } from "react";
 import { Loading } from "@/components/section";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api/client";
-import { formatKst, formatWon } from "@/lib/format";
+import { formatKst, formatWon, sourceLabel } from "@/lib/format";
 
 type Search = PageProps<"/products">["searchParams"];
+
+const SOURCE_FILTERS = [
+  { value: "", label: "모든 수집 대상" },
+  { value: "danawa", label: "다나와" },
+  { value: "mockshop", label: "연습 쇼핑몰" },
+];
 
 const STATUS_FILTERS = [
   { value: "", label: "전체" },
@@ -29,12 +35,14 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim() : "";
   const status = typeof params.status === "string" ? params.status : "";
+  const source = typeof params.source === "string" ? params.source : "";
 
   // 수집 대상은 수십 개라 한 번에 받아서 거른다. 많아지면 API에 검색을 넣는다
   const all = unwrap(await api.GET("/products", { params: { query: { active: true, limit: 500 } } }));
   const products = all.filter((p) => {
     const text = `${p.name ?? ""} ${p.source_product_id}`.toLowerCase();
     if (q && !text.includes(q.toLowerCase())) return false;
+    if (source && p.source !== source) return false;
     if (status === "ok" && p.latest?.status !== "ok") return false;
     if (status === "failed" && (!p.latest || p.latest.status === "ok")) return false;
     return true;
@@ -46,9 +54,16 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
         <input
           name="q"
           defaultValue={q}
-          placeholder="상품 이름 또는 pcode"
+          placeholder="상품 이름 또는 상품 코드"
           className="w-64 rounded border border-zinc-300 bg-white px-3 py-1.5"
         />
+        <select name="source" defaultValue={source} className="rounded border border-zinc-300 bg-white px-2 py-1.5">
+          {SOURCE_FILTERS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
         <select name="status" defaultValue={status} className="rounded border border-zinc-300 bg-white px-2 py-1.5">
           {STATUS_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
@@ -80,7 +95,9 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
                   <Link href={`/products/${p.id}`} className="text-sky-700 hover:underline">
                     {p.name ?? p.source_product_id}
                   </Link>
-                  <span className="ml-2 text-xs text-zinc-400">{p.source_product_id}</span>
+                  <span className="ml-2 text-xs text-zinc-400">
+                    {sourceLabel(p.source)} {p.source_product_id}
+                  </span>
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">{formatWon(p.latest?.lowest_price)}</td>
                 <td className="px-4 py-2 text-right">{p.latest?.offer_count ?? "-"}</td>

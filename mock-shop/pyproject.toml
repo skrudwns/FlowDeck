@@ -1,0 +1,37 @@
+[project]
+name = "mock-shop"
+version = "0.1.0"
+description = "FlowDeck 공개 데모용 연습 쇼핑몰. 가격이 규칙에 따라 바뀐다"
+readme = "README.md"
+authors = [
+    { name = "skrudwns", email = "skrudwns0104@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.162.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+mock-shop = "mock_shop.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

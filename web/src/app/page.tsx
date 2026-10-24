@@ -57,7 +57,7 @@ async function JobCard({ job }: { job: Job }) {
         <p className="mt-2 text-sm text-zinc-500">{job.description}</p>
       </Section>
       <Section title="흐름">
-        <Flow run={lastRun} />
+        <Flow run={lastRun} source={job.source} />
       </Section>
     </div>
   );
@@ -75,7 +75,7 @@ function Item({ label, value }: { label: string; value: string }) {
 type Stage = { name: string; detail: string; status: "ok" | "failed" | "partial" | "unknown"; note: string };
 
 /** 마지막 실행 결과로 단계별 상태를 보여준다. 알림 단계 결과는 Healthchecks.io에만 있어서 여기서는 알 수 없다. */
-function Flow({ run }: { run: RunDetail | null }) {
+function Flow({ run, source }: { run: RunDetail | null; source: string }) {
   const results = run?.results ?? [];
   const requestFailed = results.filter((r) => ["http_error", "blocked", "disallowed"].includes(r.status)).length;
   const parseFailed = results.filter((r) => r.status === "parse_failed").length;
@@ -84,7 +84,7 @@ function Flow({ run }: { run: RunDetail | null }) {
   const stages: Stage[] = [
     {
       name: "수집",
-      detail: "다나와 상품 페이지 요청",
+      detail: source === "mockshop" ? "연습 쇼핑몰 상품 목록·상품 페이지 요청" : "다나와 상품 페이지 요청",
       status: !run ? "unknown" : requestFailed === 0 ? "ok" : requestFailed === results.length ? "failed" : "partial",
       note: run ? `요청 실패 ${requestFailed}개` : "",
     },

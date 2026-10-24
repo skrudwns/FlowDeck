@@ -1,7 +1,8 @@
 import httpx
 import pytest
 
-from flowdeck.danawa.client import USER_AGENT, Blocked, DanawaClient, DisallowedByRobots
+from flowdeck.danawa.client import DanawaClient
+from flowdeck.polite_http import USER_AGENT, Blocked, DisallowedByRobots
 
 ROBOTS = "User-agent: *\nDisallow: /api/\nDisallow: /info/ajax/\n"
 

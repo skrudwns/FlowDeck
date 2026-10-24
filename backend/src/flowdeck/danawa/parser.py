@@ -7,34 +7,11 @@
 
 import json
 import re
-from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
-
-class ParseError(Exception):
-    pass
-
-
-@dataclass(frozen=True)
-class SellerOffer:
-    rank: int
-    name: str
-    code: str | None
-    price: int
-    delivery_fee: int | None
-
-
-@dataclass(frozen=True)
-class ProductPage:
-    product_id: str
-    name: str
-    lowest_price: int
-    offer_count: int | None
-    sellers: tuple[SellerOffer, ...]
-    # 판매처 목록을 못 읽었을 때 이유. 읽었으면 None
-    seller_error: str | None
+from flowdeck.sources import ParseError, ProductPage, SellerOffer
 
 
 def parse_product_page(html: str) -> ProductPage:

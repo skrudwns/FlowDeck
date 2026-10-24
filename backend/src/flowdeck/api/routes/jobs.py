@@ -14,12 +14,14 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 @router.get("")
 def list_jobs(session: SessionDep) -> list[JobOut]:
     now = datetime.now(UTC)
-    # 수집 실행 기록에는 아직 작업 구분이 없다. 작업이 하나뿐이라 최근 실행을 그대로 붙인다
-    last_run = session.scalar(
-        select(CollectionRun).order_by(CollectionRun.started_at.desc(), CollectionRun.id.desc())
-    )
     jobs = []
     for job in JOBS:
+        # 작업 하나가 수집 대상 하나를 맡는다
+        last_run = session.scalar(
+            select(CollectionRun)
+            .where(CollectionRun.source == job.source)
+            .order_by(CollectionRun.started_at.desc(), CollectionRun.id.desc())
+        )
         active = session.scalar(
             select(func.count())
             .select_from(Product)

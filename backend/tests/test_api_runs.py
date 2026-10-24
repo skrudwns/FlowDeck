@@ -3,7 +3,13 @@ def test_lists_runs_newest_first(api, seeded):
 
     assert [r["id"] for r in body] == [seeded["run2"], seeded["run1"]]
     assert body[0]["status"] == "partial"
+    assert body[0]["source"] == "danawa"
     assert body[0]["products_succeeded"] == 1
+
+
+def test_filters_runs_by_source(api, seeded):
+    assert len(api.get("/runs", params={"source": "danawa"}).json()) == 2
+    assert api.get("/runs", params={"source": "mockshop"}).json() == []
 
 
 def test_paginates_runs(api, seeded):
