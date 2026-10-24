@@ -16,6 +16,7 @@
 - [ADR-0005](adr/0005-collector-data-model.md) 다나와 수집 범위와 저장 구조, SQLAlchemy + Alembic
 - [ADR-0006](adr/0006-external-cron-trigger.md) 수집 주기 실행: 외부 cron이 workflow_dispatch 호출
 - [ADR-0007](adr/0007-collection-monitoring.md) 수집 감시와 알림: Healthchecks.io
+- [ADR-0008](adr/0008-portal-api-structure.md) 포털 API 구조: 동기 엔드포인트, 읽기 전용 경로
 
 ## 트러블슈팅
 
