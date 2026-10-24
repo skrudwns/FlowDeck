@@ -55,7 +55,7 @@ def test_all_ok_is_healthy(session_factory):
     report = evaluate(session_factory, run_id)
 
     assert report.ok
-    assert "(20/20)" in report.summary
+    assert report.summary.startswith(f"run {run_id} danawa: success (20/20)")
 
 
 def test_one_or_two_failures_are_still_healthy_but_listed(session_factory):

@@ -49,7 +49,7 @@ def evaluate_run(session: Session, run_id: int) -> HealthReport:
         problems.append(f"판매처 목록 파싱 실패 {len(seller_errors)}개")
 
     lines = [
-        f"run {run.id}: {run.status} ({run.products_succeeded}/{run.products_total}), "
+        f"run {run.id} {run.source}: {run.status} ({run.products_succeeded}/{run.products_total}), "
         f"trigger={run.trigger}",
     ]
     if problems:
