@@ -41,6 +41,7 @@ GitHub Actions ([문서](https://docs.github.com/en/actions/writing-workflows/ch
 - 비공개 저장소는 GitHub Free 기준 월 2,000분 포함. 공개 저장소는 무료.
 - 예약 실행 최소 간격은 5분.
 - "The `schedule` event can be delayed during periods of high loads"
+- "High load times include the start of every hour. If the load is sufficiently high enough, some queued jobs may be dropped." (2026-10-24 추가. 그래서 워크플로는 매시 17분에 돌린다)
 - 예약 워크플로는 기본 브랜치(main)에서만 실행된다.
 - 공개 저장소는 60일 동안 활동이 없으면 예약 워크플로가 자동으로 꺼진다.
 
