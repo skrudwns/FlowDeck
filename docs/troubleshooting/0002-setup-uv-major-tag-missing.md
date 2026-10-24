@@ -2,7 +2,7 @@
 
 - 날짜: 2026-10-24
 - 관련: #2, PR #3, 커밋 `c049889`(CI 추가), `75adb91`(수집 워크플로 추가)
-- 상태: 미해결
+- 상태: 해결
 
 > 요약: setup-uv는 v8부터 `@v8` 같은 major 태그를 만들지 않는다. 최신 릴리스가 v10.3.2라는 것만 보고 `@v10`으로 적었다.
 
@@ -37,6 +37,15 @@ To increase security even more we will stop publishing minor tags. You won't be 
 워크플로를 쓸 때 GitHub API로 최신 릴리스(`v10.3.2`)만 확인하고, 다른 액션들처럼 `@v10`이 있을 거라고 짐작했다. 태그가 실제로 있는지는 확인하지 않았다.
 
 ## 해결
+
+두 워크플로 모두 실제로 있는 전체 버전 태그로 고정했다 (커밋 `2fc9725`).
+
+- `astral-sh/setup-uv@v10` → `@v10.3.2`
+- `actions/checkout@v7` → `@v7.0.1`. checkout은 `v7` 태그가 있어서 그대로 둬도 동작하지만, 같은 이유로 맞췄다.
+
+push 후 CI가 push와 PR #3 두 번 모두 통과했다 (43초, 34초). 로그에서 수집 실행 테스트(`test_collector.py`) 7개가 실제로 돌았고 SKIPPED가 0개인 것도 확인했다. CI의 Postgres 서비스 컨테이너에 연결해서 DB 테스트가 건너뛰어지지 않았다는 뜻이다.
+
+커밋 SHA로 고정하는 방법도 있지만, 버전이 바로 보이는 쪽을 택했다. 전체 버전 태그는 setup-uv가 "immutable tag"라고 부르는 것이다.
 
 ## 배운 것
 
