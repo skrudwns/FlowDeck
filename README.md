@@ -12,6 +12,7 @@
   - 상품마다 최저가, 판매처 수, 상위 판매처(페이지에 나오는 만큼, 지금까지 본 최대는 10곳)의 판매처 이름·가격·배송비
   - 실행마다 성공·실패 여부와 실패 원인을 기록한다.
 - 수집 대상은 [backend/targets/danawa.txt](backend/targets/danawa.txt) 파일로 관리한다. 파일을 고쳐서 main에 합치면 다음 수집부터 반영된다.
+- 공개 데모용 연습 쇼핑몰([mock-shop/](mock-shop/README.md))도 같은 시각에 수집한다. 상품 목록 페이지를 돌며 상품을 찾고, 판매처별 가격과 품절을 모은다. 가격은 요일 할인, 급락, 품절 같은 규칙으로 바뀌어서 분석 결과를 맞춰 볼 정답이 있다. 다나와에서 모은 데이터는 공개하지 않고, 데모는 이 데이터로 보여줄 예정이다.
 - 수집이 끝날 때마다 Healthchecks.io로 신호를 보낸다. 신호가 끊기거나 문제가 있으면 이메일로 알림이 온다.
 - 읽기 전용 포털 API(FastAPI): 작업, 상품과 최근 결과, 가격 이력, 판매처 가격, 수집 실행 이력.
 - 포털 웹(Next.js): 작업 목록과 단계 흐름, 실행 이력과 실패 원인, 상품 가격 표·차트·판매처 가격. API와 웹 모두 아직 로컬에서만 띄운다.
@@ -22,7 +23,6 @@
 - 포털 제어 기능 (수동 실행, 주기 변경, 대상 관리, 알림 설정), CSV·엑셀 다운로드
 - 배포와 인증
 - 가격 분석 (급락 감지, 할인 패턴 등). 데이터가 몇 주 쌓인 뒤 시작한다.
-- 공개 데모용 연습 쇼핑몰. 다나와에서 모은 데이터는 공개하지 않는다.
 
 ## 수집 흐름
 
@@ -30,6 +30,7 @@
 flowchart LR
     cron["cron-job.org<br/>매시 17분"] -->|"GitHub API<br/>workflow_dispatch"| gha["GitHub Actions<br/>collect.yml"]
     gha -->|"robots.txt 확인 후<br/>상품 페이지 요청<br/>(3초 간격)"| danawa["다나와<br/>상품 페이지"]
+    gha -->|"작업 안에서 띄운 뒤<br/>목록·상품 페이지 요청"| shop["연습 쇼핑몰<br/>(mock-shop)"]
     gha -->|"최저가, 판매처 가격,<br/>실행 기록 저장"| neon[("Neon<br/>Postgres")]
 ```
 
@@ -64,6 +65,7 @@ backend/     수집기, 포털 API, DB 모델, 마이그레이션, CLI
   targets/   수집 대상 상품 목록
 docs/        개발 기록 (ADR, 트러블슈팅, 일지, 분석 노트)
 web/         포털 웹 (Next.js)
+mock-shop/   공개 데모용 연습 쇼핑몰 (FastAPI)
 infra/       로컬 Postgres 초기화 SQL
 .github/     CI, 수집 워크플로
 compose.yaml 로컬 개발용 Postgres
