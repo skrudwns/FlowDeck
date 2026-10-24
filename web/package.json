@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "gen:api": "cd ../backend && uv run flowdeck openapi ../web/openapi.json && cd ../web && openapi-typescript openapi.json -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
     "next": "16.4.3",
