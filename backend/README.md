@@ -1,0 +1,32 @@
+# backend
+
+FlowDeck 백엔드. 지금은 다나와 가격 수집기가 들어 있다.
+
+## 로컬 실행
+
+```bash
+docker compose up -d          # 저장소 루트에서. Postgres 17이 localhost:5433에 뜬다
+cp .env.example .env          # backend/에서. DATABASE_URL이 로컬 DB를 가리킨다
+uv sync
+uv run alembic upgrade head   # 테이블 생성
+```
+
+## 수집기
+
+```bash
+uv run flowdeck products sync targets/danawa.txt   # 대상 목록 파일을 DB에 반영
+uv run flowdeck products list
+uv run flowdeck collect                            # 한 번 수집
+```
+
+- 수집 대상은 `targets/danawa.txt`에서 관리한다. 파일에서 뺀 상품은 지우지 않고 비활성화한다.
+- 운영 수집은 GitHub Actions(`.github/workflows/collect.yml`)가 매시 17분에 Neon DB로 돌린다.
+- 지키는 원칙: 소수 상품, 요청 사이 3초, robots.txt 확인, 403/429를 받으면 멈춤, 가격·판매처·시각만 저장. 자세한 이유는 `docs/adr/0004-real-data-source-alternatives.md`.
+
+## 테스트
+
+```bash
+uv run pytest
+```
+
+수집 실행 테스트는 로컬 Postgres의 `flowdeck_test` DB를 쓴다. DB가 떠 있지 않으면 해당 테스트는 건너뛴다.

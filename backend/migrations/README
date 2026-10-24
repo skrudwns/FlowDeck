@@ -1,0 +1,6 @@
+Alembic 마이그레이션.
+
+```bash
+uv run alembic revision --autogenerate -m "설명"   # 모델 변경 후 마이그레이션 생성
+uv run alembic upgrade head                          # 적용 (DATABASE_URL 대상)
+```

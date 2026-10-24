@@ -16,7 +16,7 @@
 - 버그 수정은 재현 테스트 커밋(`test`) 다음에 수정 커밋(`fix`).
 - 버린 시도가 기록할 만하면 커밋 후 `revert`로 되돌린다.
 - 커밋 메시지와 PR 설명에 `Co-Authored-By:` 트레일러나 "Generated with Claude Code" 같은 생성 도구 표기를 넣지 않는다.
-- push와 PR 생성은 사용자가 요청할 때만 한다.
+- 이슈 하나의 작업이 끝나면 push, PR 생성, 병합까지 한다. 병합은 Merge commit 방식. PR은 내장 브라우저(GitHub 로그인됨)로 만든다. 이슈 중간에는 push하지 않는다.
 
 ## 기록
 
