@@ -1,7 +1,7 @@
 """다나와 상품 페이지(prod.danawa.com/info/?pcode=...) HTML 파싱.
 
 - 최저가, 판매처 수: schema.org JSON-LD에서 읽는다. 검색엔진용 데이터라 화면 개편에 덜 흔들린다.
-- 상위 판매처(최대 5곳): 화면 HTML(ul.list__mall-price)에서 읽는다. 더 쉽게 깨질 수 있어서,
+- 상위 판매처(관찰한 최대 10곳): 화면 HTML(ul.list__mall-price)에서 읽는다. 더 쉽게 깨질 수 있어서,
   이 부분이 실패해도 최저가는 살리고 실패 이유만 남긴다.
 """
 

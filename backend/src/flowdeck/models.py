@@ -80,7 +80,7 @@ class PriceSnapshot(Base):
 
 
 class SellerPrice(Base):
-    """스냅샷의 상위 판매처 (최대 5곳)."""
+    """스냅샷의 상위 판매처. 페이지에 나오는 만큼 저장한다 (관찰한 최대 10곳)."""
 
     __tablename__ = "seller_prices"
 
