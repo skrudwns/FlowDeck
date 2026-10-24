@@ -17,12 +17,14 @@
 - [ADR-0006](adr/0006-external-cron-trigger.md) 수집 주기 실행: 외부 cron이 workflow_dispatch 호출
 - [ADR-0007](adr/0007-collection-monitoring.md) 수집 감시와 알림: Healthchecks.io
 - [ADR-0008](adr/0008-portal-api-structure.md) 포털 API 구조: 동기 엔드포인트, 읽기 전용 경로
+- [ADR-0009](adr/0009-portal-web-structure.md) 포털 웹 구조: Next.js 서버 컴포넌트, OpenAPI 타입
 
 ## 트러블슈팅
 
 - [TS-0001](troubleshooting/0001-amended-commit-already-pushed.md) push된 커밋을 amend해서 로컬과 원격 브랜치가 갈라짐
 - [TS-0002](troubleshooting/0002-setup-uv-major-tag-missing.md) CI가 시작하자마자 실패, setup-uv@v10을 찾지 못함
 - [TS-0003](troubleshooting/0003-scheduled-workflow-not-running.md) 수집 워크플로 예약 실행이 돌지 않음
+- [TS-0004](troubleshooting/0004-next-route-types-missing-in-ci.md) CI에서만 PageProps, LayoutProps 타입을 못 찾음
 
 ## 분석 노트
 

@@ -60,6 +60,7 @@ class RunProductResult(_FromORM):
     snapshot_id: int
     product_id: int
     source_product_id: str
+    product_name: str | None
     status: str
     http_status: int | None
     lowest_price: int | None
@@ -68,3 +69,14 @@ class RunProductResult(_FromORM):
 
 class RunDetail(RunOut):
     results: list[RunProductResult]
+
+
+class JobOut(BaseModel):
+    id: str
+    name: str
+    source: str
+    description: str
+    schedule: str
+    next_run_at: datetime
+    active_products: int
+    last_run: RunOut | None

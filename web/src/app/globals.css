@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* 한글이 섞인 화면이라 시스템 한글 글꼴을 먼저 쓴다 */
+@theme {
+  --font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+}

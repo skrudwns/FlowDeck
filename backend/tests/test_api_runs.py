@@ -24,3 +24,9 @@ def test_run_detail_includes_failure_reasons(api, seeded):
 
 def test_unknown_run_is_404(api, seeded):
     assert api.get("/runs/99999").status_code == 404
+
+
+def test_run_detail_includes_product_names(api, seeded):
+    body = api.get(f"/runs/{seeded['run2']}").json()
+
+    assert [r["product_name"] for r in body["results"]] == ["상품 A", "상품 B"]

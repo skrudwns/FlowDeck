@@ -13,12 +13,14 @@
   - 실행마다 성공·실패 여부와 실패 원인을 기록한다.
 - 수집 대상은 [backend/targets/danawa.txt](backend/targets/danawa.txt) 파일로 관리한다. 파일을 고쳐서 main에 합치면 다음 수집부터 반영된다.
 - 수집이 끝날 때마다 Healthchecks.io로 신호를 보낸다. 신호가 끊기거나 문제가 있으면 이메일로 알림이 온다.
-- 읽기 전용 포털 API(FastAPI): 상품과 최근 결과, 가격 이력, 판매처 가격, 수집 실행 이력. 아직 로컬에서만 띄운다.
+- 읽기 전용 포털 API(FastAPI): 작업, 상품과 최근 결과, 가격 이력, 판매처 가격, 수집 실행 이력.
+- 포털 웹(Next.js): 작업 목록과 단계 흐름, 실행 이력과 실패 원인, 상품 가격 표·차트·판매처 가격. API와 웹 모두 아직 로컬에서만 띄운다.
 - push와 PR마다 린트와 테스트가 돈다. DB 테스트는 실제 Postgres에서 돈다.
 
 ## 아직 없는 것
 
-- 포털 화면 (작업 목록, 실행 이력, 데이터 조회), 제어 기능 (수동 실행, 주기 변경, 알림 설정)
+- 포털 제어 기능 (수동 실행, 주기 변경, 대상 관리, 알림 설정), CSV·엑셀 다운로드
+- 배포와 인증
 - 가격 분석 (급락 감지, 할인 패턴 등). 데이터가 몇 주 쌓인 뒤 시작한다.
 - 공개 데모용 연습 쇼핑몰. 다나와에서 모은 데이터는 공개하지 않는다.
 
@@ -53,7 +55,7 @@ flowchart LR
 | DB | PostgreSQL 17, SQLAlchemy, Alembic | [ADR-0001](docs/adr/0001-tech-stack.md), [ADR-0005](docs/adr/0005-collector-data-model.md) |
 | 실행 | GitHub Actions, Neon, cron-job.org | [ADR-0003](docs/adr/0003-collector-runtime.md), [ADR-0006](docs/adr/0006-external-cron-trigger.md) |
 | 감시 | Healthchecks.io | [ADR-0007](docs/adr/0007-collection-monitoring.md) |
-| 웹 (예정) | Next.js, TypeScript | [ADR-0001](docs/adr/0001-tech-stack.md) |
+| 웹 | Next.js 16, TypeScript, Tailwind CSS, Recharts | [ADR-0001](docs/adr/0001-tech-stack.md), [ADR-0009](docs/adr/0009-portal-web-structure.md) |
 
 ## 저장소 구조
 
@@ -61,6 +63,7 @@ flowchart LR
 backend/     수집기, 포털 API, DB 모델, 마이그레이션, CLI
   targets/   수집 대상 상품 목록
 docs/        개발 기록 (ADR, 트러블슈팅, 일지, 분석 노트)
+web/         포털 웹 (Next.js)
 infra/       로컬 Postgres 초기화 SQL
 .github/     CI, 수집 워크플로
 compose.yaml 로컬 개발용 Postgres
@@ -68,7 +71,7 @@ compose.yaml 로컬 개발용 Postgres
 
 ## 로컬에서 실행
 
-[backend/README.md](backend/README.md)를 본다. Docker로 Postgres를 띄우고 `uv run flowdeck collect`로 한 번 수집할 수 있다.
+[backend/README.md](backend/README.md), [web/README.md](web/README.md)를 본다. Docker로 Postgres를 띄우고 `uv run flowdeck collect`로 한 번 수집한 뒤, API와 웹을 띄우면 화면에서 볼 수 있다.
 
 ## 개발 기록
 
