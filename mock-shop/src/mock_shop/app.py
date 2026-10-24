@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from html import escape
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
 from mock_shop.catalog import PRODUCTS, PRODUCTS_BY_ID
@@ -36,8 +36,55 @@ def won(value: int) -> str:
     return f"{value:,}원"
 
 
+class NotFound(Exception):
+    pass
+
+
+def render_product_list(page: int, at: datetime) -> str:
+    start = (page - 1) * PAGE_SIZE
+    items = PRODUCTS[start : start + PAGE_SIZE]
+    if page < 1 or not items:
+        raise NotFound("없는 페이지")
+    rows = []
+    for product in items:
+        lowest = min(o.price for o in offers_at(product, at) if o.in_stock)
+        rows.append(
+            f'<li class="product-item">'
+            f'<a class="product-link" href="/products/{product.id}">{escape(product.name)}</a>'
+            f'<span class="lowest-price">{won(lowest)}부터</span></li>'
+        )
+    nav = []
+    if page > 1:
+        nav.append(f'<a class="prev" href="/products?page={page - 1}">이전</a>')
+    if start + PAGE_SIZE < len(PRODUCTS):
+        nav.append(f'<a class="next" href="/products?page={page + 1}">다음</a>')
+    body = (
+        f'<ul class="product-list">{"".join(rows)}</ul>'
+        f'<nav class="pagination">{" ".join(nav)}</nav>'
+    )
+    return _page("상품 목록", body, at)
+
+
+def render_product(product_id: str, at: datetime) -> str:
+    product = PRODUCTS_BY_ID.get(product_id)
+    if product is None:
+        raise NotFound("없는 상품")
+    rows = "".join(_offer_row(o) for o in offers_at(product, at))
+    body = (
+        f'<p><a href="/products">상품 목록</a></p>'
+        f'<h2 class="product-name" data-product-id="{product.id}">{escape(product.name)}</h2>'
+        '<table class="offers"><thead><tr><th>판매처</th><th>가격</th><th>배송</th>'
+        f"<th>재고</th></tr></thead><tbody>{rows}</tbody></table>"
+    )
+    return _page(product.name, body, at)
+
+
 def create_app(now: Callable[[], datetime] = utc_now) -> FastAPI:
     app = FastAPI(title="연습마켓", docs_url=None, redoc_url=None, openapi_url=None)
+
+    @app.exception_handler(NotFound)
+    def not_found(_request: Request, e: NotFound) -> PlainTextResponse:
+        return PlainTextResponse(str(e), status_code=404)
 
     @app.get("/robots.txt", response_class=PlainTextResponse)
     def robots() -> str:
@@ -49,44 +96,11 @@ def create_app(now: Callable[[], datetime] = utc_now) -> FastAPI:
 
     @app.get("/products", response_class=HTMLResponse)
     def product_list(page: int = Query(1, ge=1)) -> str:
-        start = (page - 1) * PAGE_SIZE
-        items = PRODUCTS[start : start + PAGE_SIZE]
-        if not items:
-            raise HTTPException(status_code=404, detail="없는 페이지")
-        at = now()
-        rows = []
-        for product in items:
-            lowest = min(o.price for o in offers_at(product, at) if o.in_stock)
-            rows.append(
-                f'<li class="product-item">'
-                f'<a class="product-link" href="/products/{product.id}">{escape(product.name)}</a>'
-                f'<span class="lowest-price">{won(lowest)}부터</span></li>'
-            )
-        nav = []
-        if page > 1:
-            nav.append(f'<a class="prev" href="/products?page={page - 1}">이전</a>')
-        if start + PAGE_SIZE < len(PRODUCTS):
-            nav.append(f'<a class="next" href="/products?page={page + 1}">다음</a>')
-        body = (
-            f'<ul class="product-list">{"".join(rows)}</ul>'
-            f'<nav class="pagination">{" ".join(nav)}</nav>'
-        )
-        return _page("상품 목록", body, at)
+        return render_product_list(page, now())
 
     @app.get("/products/{product_id}", response_class=HTMLResponse)
     def product_detail(product_id: str) -> str:
-        product = PRODUCTS_BY_ID.get(product_id)
-        if product is None:
-            raise HTTPException(status_code=404, detail="없는 상품")
-        at = now()
-        rows = "".join(_offer_row(o) for o in offers_at(product, at))
-        body = (
-            f'<p><a href="/products">상품 목록</a></p>'
-            f'<h2 class="product-name" data-product-id="{product.id}">{escape(product.name)}</h2>'
-            '<table class="offers"><thead><tr><th>판매처</th><th>가격</th><th>배송</th>'
-            f"<th>재고</th></tr></thead><tbody>{rows}</tbody></table>"
-        )
-        return _page(product.name, body, at)
+        return render_product(product_id, now())
 
     return app
 
