@@ -76,7 +76,7 @@ def make_dispatcher(settings: Settings) -> WorkflowDispatcher | None:
         return None
     return WorkflowDispatcher(
         token=settings.portal_github_token.get_secret_value(),
-        repository=settings.github_repository,
-        workflow=settings.collect_workflow,
-        ref=settings.github_ref,
+        repository=settings.portal_github_repository,
+        workflow=settings.portal_collect_workflow,
+        ref=settings.portal_github_ref,
     )
