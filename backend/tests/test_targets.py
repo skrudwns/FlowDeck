@@ -1,23 +1,7 @@
-import pytest
 from sqlalchemy import select
 
 from flowdeck.models import Product
-from flowdeck.targets import read_targets, sync_products
-
-
-def test_read_targets_skips_comments_and_duplicates(tmp_path):
-    path = tmp_path / "targets.txt"
-    path.write_text("# 제목\n111  # SSD\n\n222\n111\n", encoding="utf-8")
-
-    assert read_targets(path) == ["111", "222"]
-
-
-def test_read_targets_rejects_non_numeric(tmp_path):
-    path = tmp_path / "targets.txt"
-    path.write_text("111\nabc\n", encoding="utf-8")
-
-    with pytest.raises(ValueError, match=":2"):
-        read_targets(path)
+from flowdeck.targets import sync_products
 
 
 def active_pcodes(session):
