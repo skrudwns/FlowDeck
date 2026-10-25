@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -5,7 +6,7 @@ from sqlalchemy import select
 
 from flowdeck.collector import run_collection
 from flowdeck.danawa.parser import parse_product_page
-from flowdeck.models import CollectionRun, PriceSnapshot, Product, SellerPrice
+from flowdeck.models import CollectionRun, PriceSnapshot, Product, RunRequest, SellerPrice
 from flowdeck.polite_http import Blocked, Response
 from flowdeck.sources import ListedProduct, Source
 
@@ -200,3 +201,50 @@ def test_run_fails_when_listing_cannot_be_read(session_factory):
     assert run.error_message == "상품 목록 수집 실패: 차단 응답 429"
     assert fetcher.requested == []
     assert products(session_factory) == [("1", True)]
+
+
+def add_request(session_factory, job_id, at):
+    with session_factory() as session:
+        request = RunRequest(job_id=job_id, requested_at=at, status="pending")
+        session.add(request)
+        session.commit()
+        return request.id
+
+
+def request_states(session_factory):
+    with session_factory() as session:
+        rows = session.scalars(select(RunRequest).order_by(RunRequest.id)).all()
+        return [(r.status, r.run_id) for r in rows]
+
+
+def test_links_pending_requests_started_before_the_run(session_factory):
+    add_products(session_factory, "1")
+    t0 = datetime(2026, 10, 25, 4, 0, tzinfo=UTC)
+    add_request(session_factory, "danawa-prices", t0)
+    add_request(session_factory, "mockshop-prices", t0)
+    # 실행이 시작된 뒤 들어온 요청은 다음 실행 몫
+    add_request(session_factory, "danawa-prices", t0 + timedelta(minutes=10))
+    clock = iter([t0 + timedelta(minutes=5)] + [t0 + timedelta(minutes=6)] * 10)
+
+    run = run_collection(
+        session_factory,
+        source(FakeFetcher({"1": ok()})),
+        now=lambda: next(clock),
+        job_id="danawa-prices",
+    )
+
+    assert request_states(session_factory) == [
+        ("done", run.id),
+        ("pending", None),
+        ("pending", None),
+    ]
+
+
+def test_links_requests_even_when_run_fails_unexpectedly(session_factory):
+    add_products(session_factory, "1")
+    add_request(session_factory, "danawa-prices", datetime(2026, 10, 25, 4, 0, tzinfo=UTC))
+
+    with pytest.raises(KeyError):
+        run_collection(session_factory, source(FakeFetcher({})), job_id="danawa-prices")
+
+    assert request_states(session_factory)[0][0] == "done"
