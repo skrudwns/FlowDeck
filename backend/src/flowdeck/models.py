@@ -1,4 +1,4 @@
-"""수집 데이터 테이블. 구조와 이유는 docs/adr/0005-collector-data-model.md, 0010-mock-shop.md."""
+"""수집 데이터와 제어 테이블. 구조와 이유는 docs/adr/0005, 0010, 0011."""
 
 from datetime import datetime
 
@@ -99,3 +99,49 @@ class SellerPrice(Base):
     in_stock: Mapped[bool] = mapped_column(default=True, server_default="true")
 
     snapshot: Mapped[PriceSnapshot] = relationship(back_populates="sellers")
+
+
+class JobSchedule(Base):
+    """작업별 주기. 행이 없으면 기본값(매시, 켜짐)으로 본다 (ADR-0011)."""
+
+    __tablename__ = "job_schedules"
+
+    # flowdeck.jobs.JOBS의 id
+    job_id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    interval_hours: Mapped[int] = mapped_column(SmallInteger)
+    enabled: Mapped[bool] = mapped_column()
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RunRequest(Base):
+    """포털에서 들어온 수동 실행 요청. Postgres 테이블을 작업 큐로 쓴다 (ADR-0011)."""
+
+    __tablename__ = "run_requests"
+    __table_args__ = (Index("ix_run_requests_job_status", "job_id", "status"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[str] = mapped_column(String(40))
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # pending / done
+    status: Mapped[str] = mapped_column(String(20))
+    # 이 요청을 처리한 수집 실행
+    run_id: Mapped[int | None] = mapped_column(ForeignKey("collection_runs.id"))
+    # GitHub Actions 바로 실행 결과. 실패하면 다음 정기 호출 때 실행된다
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    workflow_run_url: Mapped[str | None] = mapped_column(Text)
+    dispatch_error: Mapped[str | None] = mapped_column(Text)
+
+
+class AuditLog(Base):
+    """수집 대상, 주기, 수동 실행 변경 이력. 대상 목록 파일의 git 이력을 대신한다 (ADR-0011)."""
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # portal / cli. 인증이 없어서 사람 대신 경로를 남긴다
+    actor: Mapped[str] = mapped_column(String(20))
+    # product_added / product_reactivated / product_deactivated / schedule_changed / run_requested
+    action: Mapped[str] = mapped_column(String(40))
+    target: Mapped[str] = mapped_column(Text)
+    detail: Mapped[str | None] = mapped_column(Text)
