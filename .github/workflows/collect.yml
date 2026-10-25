@@ -5,10 +5,11 @@ name: 가격 수집
 # 연습 쇼핑몰 수집: docs/adr/0010-mock-shop.md
 #
 # 포털 제어와 스케줄러: docs/adr/0011-portal-control-and-scheduler.md
+# 한 job으로 돌리는 이유: docs/adr/0012-collect-single-job.md
 #
 # GitHub Actions 예약 실행(schedule)은 이 저장소에서 돌지 않았다 (TS-0003).
 # 그래서 외부 cron 서비스가 매시 17분에 GitHub API로 workflow_dispatch를 호출한다 (ADR-0006).
-# 호출되면 plan 작업이 DB의 주기와 수동 실행 요청을 보고 이번에 돌 작업만 정한다.
+# 호출되면 plan 단계가 DB의 주기와 수동 실행 요청을 보고 이번에 돌 작업만 정한다.
 # trigger 입력은 호출한 쪽이다: schedule(cron-job.org), portal(포털 바로 실행), manual(GitHub 화면).
 # cron-job.org가 이 파일 이름(collect.yml)으로 호출하니 이름을 바꾸지 않는다.
 on:
@@ -29,22 +30,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 마이그레이션은 두 수집 작업이 동시에 하지 않게 여기서 한 번만 한다
-  plan:
+  # plan, 다나와, 연습 쇼핑몰을 한 job으로 돌린다. job마다 준비 단계(체크아웃, uv, 의존성)를
+  # 따로 하면 비공개 저장소의 Actions 사용 시간이 그만큼 늘어난다 (ADR-0012)
+  collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: backend
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      # 이번에 돌지 않는 작업도 스케줄러가 돌았다는 신호를 보낸다 (ADR-0011 감시)
+      # 수집 결과 신호 (ADR-0007, ADR-0010). 없으면 신호 없이 수집만 한다.
+      # 이번에 돌지 않는 작업도 plan이 스케줄러가 돌았다는 신호를 보낸다 (ADR-0011 감시)
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
       MOCKSHOP_HEALTHCHECK_URL: ${{ secrets.MOCKSHOP_HEALTHCHECK_URL }}
-    # 수집 대상별 실행 종류: schedule / manual / 빈 값(건너뜀)
-    outputs:
-      danawa: ${{ steps.plan.outputs.danawa }}
-      mockshop: ${{ steps.plan.outputs.mockshop }}
+
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.2
@@ -52,8 +52,11 @@ jobs:
           working-directory: backend
           enable-cache: true
       - run: uv sync --frozen --no-dev
+
       - name: DB 스키마 최신으로
         run: uv run alembic upgrade head
+
+      # 수집 대상별 실행 종류를 출력에 적는다: schedule / manual / 빈 값(건너뜀)
       - name: 이번에 돌 작업 정하기
         id: plan
         env:
@@ -61,56 +64,18 @@ jobs:
           TRIGGER: ${{ inputs.trigger }}
         run: uv run flowdeck plan --trigger "$TRIGGER" --github-output "$GITHUB_OUTPUT"
 
-  danawa:
-    needs: plan
-    if: needs.plan.outputs.danawa != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      # 수집 결과 신호 (ADR-0007). 없으면 신호 없이 수집만 한다
-      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
-
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.3.2
-        with:
-          working-directory: backend
-          enable-cache: true
-      - run: uv sync --frozen --no-dev
-
       # 수집 대상은 DB가 기준이다. 포털이나 flowdeck products로 바꾼다 (ADR-0011)
-      - name: 수집
+      - name: 다나와 수집
+        if: steps.plan.outputs.danawa != ''
         env:
-          TRIGGER: ${{ needs.plan.outputs.danawa }}
+          TRIGGER: ${{ steps.plan.outputs.danawa }}
         run: uv run flowdeck collect --trigger "$TRIGGER"
 
-  mockshop:
-    needs: plan
-    if: needs.plan.outputs.mockshop != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      # 다나와와 다른 체크로 보낸다 (ADR-0010). 없으면 신호 없이 수집만 한다
-      MOCKSHOP_HEALTHCHECK_URL: ${{ secrets.MOCKSHOP_HEALTHCHECK_URL }}
-
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.3.2
-        with:
-          working-directory: backend
-          enable-cache: true
-      - run: uv sync --frozen --no-dev
-
-      # 쇼핑몰은 이 작업 안에서만 떠 있다. 가격은 시각으로 정해져서 매번 새로 띄워도 된다
+      # 아래 연습 쇼핑몰 단계는 always()로 다나와 수집이 실패해도 돈다.
+      # 다나와가 실패하면 job은 실패로 끝나지만 연습 쇼핑몰 수집은 그대로 한다.
+      # 쇼핑몰은 이 job 안에서만 떠 있다. 가격은 시각으로 정해져서 매번 새로 띄워도 된다 (ADR-0010)
       - name: 연습 쇼핑몰 띄우기
+        if: always() && steps.plan.outputs.mockshop != ''
         working-directory: mock-shop
         run: |
           uv sync --frozen --no-dev
@@ -122,11 +87,13 @@ jobs:
           cat "$RUNNER_TEMP/mock-shop.log"
           exit 1
 
-      - name: 수집
+      - name: 연습 쇼핑몰 수집
+        if: always() && steps.plan.outputs.mockshop != ''
         env:
-          TRIGGER: ${{ needs.plan.outputs.mockshop }}
+          TRIGGER: ${{ steps.plan.outputs.mockshop }}
         run: uv run flowdeck collect --source mockshop --trigger "$TRIGGER"
 
       - name: 쇼핑몰 로그
-        if: always()
-        run: cat "$RUNNER_TEMP/mock-shop.log"
+        if: always() && steps.plan.outputs.mockshop != ''
+        # 쇼핑몰이 뜨기 전에 실패했으면 로그 파일이 없을 수 있다
+        run: cat "$RUNNER_TEMP/mock-shop.log" || true
