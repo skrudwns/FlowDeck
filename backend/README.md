@@ -38,7 +38,30 @@ uv run uvicorn flowdeck.api.app:app --reload   # http://localhost:8000/docs
 
 상품 목록과 최근 결과, 가격 이력, 수집 한 번의 판매처 가격, 수집 실행 이력을 준다. 경로와 규칙은 `docs/adr/0008-portal-api-structure.md`.
 
-제어 경로(수동 실행 요청, 주기 변경, 다나와 대상 추가·중지, 변경 이력)는 `docs/adr/0011-portal-control-and-scheduler.md`. 인증이 없으니 로컬에서만 띄운다. `.env`에 `PORTAL_GITHUB_TOKEN`(이 저장소의 Actions 읽기·쓰기만 가진 fine-grained token)이 있으면 수동 실행 요청 때 워크플로를 바로 실행하고, 없으면 요청만 남겨서 다음 정기 호출 때 실행된다.
+제어 경로(수동 실행 요청, 주기 변경, 다나와 대상 추가·중지, 변경 이력)는 `docs/adr/0011-portal-control-and-scheduler.md`. 인증이 없으니 내 컴퓨터에서만 띄운다.
+
+### 운영 수집을 제어할 때: Neon에 붙여 띄우기
+
+수집 워크플로는 Neon을 본다. 포털에서 바꾼 주기, 대상, 실행 요청이 운영 수집에 반영되려면 API도 Neon에 붙어야 한다.
+
+```bash
+# backend/.env.neon (커밋하지 않는다. .gitignore의 .env.*)
+DATABASE_URL=postgresql://...neon.tech/...   # GitHub Secret DATABASE_URL과 같은 주소
+PORTAL_GITHUB_TOKEN=github_pat_...            # 이 저장소의 Actions 읽기·쓰기만 가진 fine-grained token
+```
+
+```bash
+uv run uvicorn flowdeck.api.app:app --env-file .env.neon --port 8010
+```
+
+- `--env-file`로 넣은 값이 `.env`보다 먼저다. 빠진 값은 `.env`에서 읽는다.
+- 토큰이 있으면 수동 실행 요청 때 워크플로를 바로 실행하고, 없으면 요청만 남겨서 다음 정기 호출(매시 17분) 때 실행된다.
+- 여기서 바꾼 것은 운영 데이터다. 다나와 수집 대상과 주기가 바로 바뀐다.
+- 열어 둔 DB 연결이 Neon compute를 깨워 두는지는 Neon 문서에서 확인하지 못했다. 쓰지 않을 때는 API를 끈다. #12에서 사용량을 보며 확인한다.
+
+### 개발할 때: 로컬 DB
+
+`.env`의 `DATABASE_URL`이 로컬 DB면 토큰이 있어도 GitHub 바로 실행을 하지 않는다. 요청은 로컬 DB에 남고, 로컬에서 `flowdeck plan`, `flowdeck collect`로 처리한다.
 
 ## 테스트
 
