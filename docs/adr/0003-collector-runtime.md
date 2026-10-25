@@ -38,7 +38,7 @@ C. 비용을 들이지 않는다는 조건에서 끊김이 가장 적은 방법�
 
 GitHub Actions ([문서](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows), [요금](https://docs.github.com/en/billing/concepts/product-billing/github-actions)):
 
-- 비공개 저장소는 GitHub Free 기준 월 2,000분 포함. 공개 저장소는 무료.
+- 비공개 저장소는 GitHub Free 기준 월 2,000분 포함. 공개 저장소는 무료. (2026-10-25 확인: 이 저장소는 비공개이고, 계정이 GitHub Pro라 포함 사용량은 월 3,000분이다)
 - 예약 실행 최소 간격은 5분.
 - "The `schedule` event can be delayed during periods of high loads"
 - "High load times include the start of every hour. If the load is sufficiently high enough, some queued jobs may be dropped." (2026-10-24 추가. 그래서 워크플로는 매시 17분에 돌린다)
@@ -53,6 +53,7 @@ Neon Free ([FAQ](https://neon.com/faqs/free-plan-limits-and-quotas)):
 ## 감수하는 것
 
 - 실행 시간: 1시간마다 실행하면 월 720회다. 한 번에 1분 정도 걸린다고 보면 월 720분 정도로 2,000분 안에 들어간다. 실제 실행 시간은 첫 실행 후 측정해서 여기에 적는다.
+  - 측정 (2026-10-25, Actions 화면의 job 실행 시간): 다나와만 수집하던 때(#13) 1분 44초로, 처음 잡은 1분보다 길었다. 그래도 월 1,300분(분 단위로 올려 세면 1,500분) 안팎이다. 연습 쇼핑몰과 스케줄러가 붙은 뒤(#28)는 job 3개 합계 2분 51초였고, 한 job으로 합쳤다 (ADR-0012).
 - 저장 공간: 0.5GB가 가장 먼저 부딪힐 한도다. 수집 대상 수와 저장 방식(가격이 바뀌지 않아도 매번 저장할지)을 정할 때 이 한도를 기준으로 계산한다.
 - 예약 실행이 늦어지거나 빠지는 시간대가 생길 수 있다. 분석할 때 수집 시각 간격이 고르지 않다는 걸 전제로 해야 한다. 실행 기록을 남겨 얼마나 빠졌는지 나중에 확인한다.
 - 예약 실행은 main에서만 돌기 때문에, 이 브랜치의 수집기가 main에 합쳐진 뒤부터 수집이 시작된다.
