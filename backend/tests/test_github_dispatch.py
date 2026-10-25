@@ -58,7 +58,7 @@ def test_network_error_raises_dispatch_error():
 
 
 def test_no_dispatcher_without_token(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@localhost/db")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@db.example.com/db")
     monkeypatch.delenv("PORTAL_GITHUB_TOKEN", raising=False)
     assert make_dispatcher(Settings(_env_file=None)) is None
 
@@ -78,3 +78,22 @@ def test_actions_env_vars_do_not_change_dispatch_target(monkeypatch):
 
     assert dispatcher._url == URL.replace("o/r", "skrudwns/FlowDeck")
     assert dispatcher._ref == "main"
+
+
+@pytest.mark.parametrize(
+    "database_url",
+    [
+        "postgresql://flowdeck:flowdeck@localhost:5433/flowdeck",
+        "postgresql://u:p@127.0.0.1/db",
+        "postgresql:///db",
+    ],
+)
+def test_portal_on_local_database_does_not_dispatch(monkeypatch, database_url):
+    # 수집 워크플로는 Neon을 본다. 로컬 DB에 남긴 요청으로 워크플로를 실행해도 할 일이 없다
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    monkeypatch.setenv("PORTAL_GITHUB_TOKEN", "x")
+
+    dispatcher = make_dispatcher(Settings(_env_file=None))
+
+    with pytest.raises(DispatchError, match="로컬 DB"):
+        dispatcher.dispatch({"trigger": "portal"})
