@@ -165,7 +165,7 @@ def request_run(
     try:
         result = dispatcher.dispatch({"trigger": "portal"})
     except DispatchError as e:
-        log.warning("워크플로 바로 실행 실패: %s", e)
+        log.warning("워크플로 바로 실행 안 함: %s", e)
         request.dispatch_error = str(e)
     else:
         request.dispatched_at = now

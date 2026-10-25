@@ -45,7 +45,7 @@ def test_error_status_raises_without_leaking_token():
 
     with pytest.raises(DispatchError) as exc:
         make(handler).dispatch({"trigger": "portal"})
-    assert str(exc.value) == "GitHub 응답 401: Bad credentials"
+    assert str(exc.value) == "GitHub 응답 401(Bad credentials). 다음 정기 호출 때 실행된다"
     assert "t0ken" not in str(exc.value)
 
 
