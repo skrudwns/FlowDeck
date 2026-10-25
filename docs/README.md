@@ -20,6 +20,7 @@
 - [ADR-0008](adr/0008-portal-api-structure.md) 포털 API 구조: 동기 엔드포인트, 읽기 전용 경로
 - [ADR-0009](adr/0009-portal-web-structure.md) 포털 웹 구조: Next.js 서버 컴포넌트, OpenAPI 타입
 - [ADR-0010](adr/0010-mock-shop.md) 연습 쇼핑몰: 수집 작업 안에서 띄우고, 규칙으로 정한 가격을 크롤링
+- [ADR-0011](adr/0011-portal-control-and-scheduler.md) 포털 직접 제어와 스케줄러: Actions 유지, 주기와 실행 요청은 DB, 수집 대상 기준은 DB
 
 ## 트러블슈팅
 
