@@ -1,31 +1,7 @@
 from datetime import UTC, datetime
 
-from flowdeck.jobs import JOBS, Job
-from flowdeck.models import CollectionRun
-
-JOB = Job(id="x", name="x", source="danawa", description="", minute_of_hour=17)
-
-
-def test_next_run_is_later_this_hour():
-    now = datetime(2026, 10, 24, 12, 5, tzinfo=UTC)
-
-    assert JOB.next_run_after(now) == datetime(2026, 10, 24, 12, 17, tzinfo=UTC)
-
-
-def test_next_run_moves_to_next_hour_once_passed():
-    now = datetime(2026, 10, 24, 12, 17, tzinfo=UTC)
-
-    assert JOB.next_run_after(now) == datetime(2026, 10, 24, 13, 17, tzinfo=UTC)
-
-
-def test_next_run_crosses_midnight():
-    now = datetime(2026, 10, 24, 23, 40, tzinfo=UTC)
-
-    assert JOB.next_run_after(now) == datetime(2026, 10, 25, 0, 17, tzinfo=UTC)
-
-
-def test_schedule_label():
-    assert JOB.schedule == "매시 17분"
+from flowdeck.jobs import JOBS
+from flowdeck.models import CollectionRun, JobSchedule
 
 
 def test_jobs_are_defined_one_per_source():
@@ -42,6 +18,7 @@ def test_jobs_api_includes_last_run_and_counts(api, seeded):
     job = body[0]
     assert job["name"] == "다나와 가격 수집"
     assert job["schedule"] == "매시 17분"
+    assert (job["interval_hours"], job["enabled"]) == (1, True)
     assert job["active_products"] == 1
     assert job["last_run"]["id"] == seeded["run2"]
     assert job["next_run_at"]
@@ -76,3 +53,15 @@ def add_run(session_factory, source, at):
         session.add(run)
         session.commit()
         return run.id
+
+
+def test_jobs_api_reads_schedule_from_db(api, session_factory):
+    with session_factory() as session:
+        session.add(JobSchedule(job_id="mockshop-prices", interval_hours=6, enabled=False))
+        session.commit()
+
+    body = {j["id"]: j for j in api.get("/jobs").json()}
+
+    assert body["mockshop-prices"]["schedule"] == "6시간마다 17분 (0시 기준)"
+    assert body["mockshop-prices"]["next_run_at"] is None
+    assert body["danawa-prices"]["next_run_at"] is not None

@@ -80,6 +80,9 @@ class JobOut(BaseModel):
     source: str
     description: str
     schedule: str
-    next_run_at: datetime
+    interval_hours: int
+    enabled: bool
+    # 정기 실행이 꺼져 있으면 비어 있다
+    next_run_at: datetime | None
     active_products: int
     last_run: RunOut | None

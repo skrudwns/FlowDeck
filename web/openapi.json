@@ -474,9 +474,24 @@
             "type": "string",
             "title": "Schedule"
           },
+          "interval_hours": {
+            "type": "integer",
+            "title": "Interval Hours"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
           "next_run_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Next Run At"
           },
           "active_products": {
@@ -501,6 +516,8 @@
           "source",
           "description",
           "schedule",
+          "interval_hours",
+          "enabled",
           "next_run_at",
           "active_products",
           "last_run"

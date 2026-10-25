@@ -173,11 +173,12 @@ export interface components {
             description: string;
             /** Schedule */
             schedule: string;
-            /**
-             * Next Run At
-             * Format: date-time
-             */
-            next_run_at: string;
+            /** Interval Hours */
+            interval_hours: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Next Run At */
+            next_run_at: string | null;
             /** Active Products */
             active_products: number;
             last_run: components["schemas"]["RunOut"] | null;
