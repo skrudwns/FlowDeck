@@ -1,18 +1,24 @@
 """uv run uvicorn flowdeck.api.app:app --reload  →  http://localhost:8000/docs"""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from flowdeck.api.deps import SessionDep
-from flowdeck.api.routes import jobs, products, runs, snapshots
+from flowdeck.api.routes import audit, jobs, products, runs, snapshots
+from flowdeck.control import ControlError
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="FlowDeck API",
         version="0.1.0",
-        description="수집 대상, 가격 이력, 수집 실행 이력 조회 (읽기 전용)",
+        description="수집 대상, 가격 이력, 수집 실행 이력 조회와 수동 실행·주기·대상 관리",
     )
+
+    @app.exception_handler(ControlError)
+    def control_error(_request: Request, e: ControlError) -> JSONResponse:
+        return JSONResponse({"detail": str(e)}, status_code=e.status)
 
     @app.get("/health", tags=["health"])
     def health(session: SessionDep) -> dict[str, str]:
@@ -23,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(products.router)
     app.include_router(snapshots.router)
     app.include_router(runs.router)
+    app.include_router(audit.router)
     return app
 
 

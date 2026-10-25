@@ -38,6 +38,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Job
+         * @description 주기(시간), 정기 실행 켜짐을 바꾼다. 꺼도 수동 실행은 된다.
+         */
+        patch: operations["update_job_jobs__job_id__patch"];
+        trace?: never;
+    };
+    "/jobs/{job_id}/run-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Run Request
+         * @description 수동 실행 요청. GitHub 토큰이 있으면 워크플로를 바로 실행하고, 없거나 실패하면
+         *     다음 정기 호출(매시 17분) 때 실행된다.
+         */
+        post: operations["create_run_request_jobs__job_id__run_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products": {
         parameters: {
             query?: never;
@@ -48,7 +89,11 @@ export interface paths {
         /** List Products */
         get: operations["list_products_products_get"];
         put?: never;
-        post?: never;
+        /**
+         * Create Product
+         * @description 다나와 pcode로 수집 대상 추가. 중지된 상품이면 다시 켠다. 활성 30개까지.
+         */
+        post: operations["create_product_products_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -69,7 +114,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Product
+         * @description 수집 중지·재개. 지우지 않아서 가격 기록은 남는다.
+         */
+        patch: operations["update_product_products__product_id__patch"];
         trace?: never;
     };
     "/products/{product_id}/prices": {
@@ -152,10 +201,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Audit Log
+         * @description 수집 대상, 주기, 수동 실행 변경 이력. 최신순.
+         */
+        get: operations["list_audit_log_audit_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AuditLogOut */
+        AuditLogOut: {
+            /** Id */
+            id: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Actor */
+            actor: string;
+            /** Action */
+            action: string;
+            /** Target */
+            target: string;
+            /** Detail */
+            detail: string | null;
+        };
+        /**
+         * ErrorOut
+         * @description 제어 요청을 받을 수 없을 때. detail에 이유를 담는다.
+         */
+        ErrorOut: {
+            /** Detail */
+            detail: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -173,14 +268,28 @@ export interface components {
             description: string;
             /** Schedule */
             schedule: string;
-            /**
-             * Next Run At
-             * Format: date-time
-             */
-            next_run_at: string;
+            /** Interval Hours */
+            interval_hours: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Next Run At */
+            next_run_at: string | null;
             /** Active Products */
             active_products: number;
             last_run: components["schemas"]["RunOut"] | null;
+            pending_request: components["schemas"]["RunRequestOut"] | null;
+            /** Manual Run Blocked */
+            manual_run_blocked: string | null;
+        };
+        /**
+         * JobUpdate
+         * @description 바꿀 값만 보낸다.
+         */
+        JobUpdate: {
+            /** Interval Hours */
+            interval_hours?: number | null;
+            /** Enabled */
+            enabled?: boolean | null;
         };
         /**
          * LatestResult
@@ -217,6 +326,14 @@ export interface components {
             /** Offer Count */
             offer_count: number | null;
         };
+        /**
+         * ProductCreate
+         * @description 다나와 상품 추가. 연습 쇼핑몰 상품은 쇼핑몰 목록으로 정해진다 (ADR-0010).
+         */
+        ProductCreate: {
+            /** Source Product Id */
+            source_product_id: string;
+        };
         /** ProductOut */
         ProductOut: {
             /** Id */
@@ -235,6 +352,11 @@ export interface components {
              */
             created_at: string;
             latest?: components["schemas"]["LatestResult"] | null;
+        };
+        /** ProductUpdate */
+        ProductUpdate: {
+            /** Active */
+            active: boolean;
         };
         /** RunDetail */
         RunDetail: {
@@ -304,6 +426,28 @@ export interface components {
             lowest_price: number | null;
             /** Error Message */
             error_message: string | null;
+        };
+        /** RunRequestOut */
+        RunRequestOut: {
+            /** Id */
+            id: number;
+            /** Job Id */
+            job_id: string;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Status */
+            status: string;
+            /** Run Id */
+            run_id: number | null;
+            /** Dispatched At */
+            dispatched_at: string | null;
+            /** Workflow Run Url */
+            workflow_run_url: string | null;
+            /** Dispatch Error */
+            dispatch_error: string | null;
         };
         /** SellerOut */
         SellerOut: {
@@ -384,6 +528,126 @@ export interface operations {
             };
         };
     };
+    update_job_jobs__job_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_run_request_jobs__job_id__run_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRequestOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_products_products_get: {
         parameters: {
             query?: {
@@ -417,6 +681,66 @@ export interface operations {
             };
         };
     };
+    create_product_products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_product_products__product_id__get: {
         parameters: {
             query?: never;
@@ -435,6 +759,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_product_products__product_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Validation Error */
@@ -566,6 +952,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_audit_log_audit_log_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogOut"][];
                 };
             };
             /** @description Validation Error */

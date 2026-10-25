@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { RunButton, ScheduleForm } from "@/components/controls";
 import { Loading, Section } from "@/components/section";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap, type Job, type RunDetail } from "@/lib/api/client";
@@ -38,7 +39,7 @@ async function JobCard({ job }: { job: Job }) {
       <Section title={job.name}>
         <dl className="grid grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-white p-5 sm:grid-cols-4">
           <Item label="주기" value={job.schedule} />
-          <Item label="다음 실행" value={formatKst(job.next_run_at)} />
+          <Item label="다음 실행" value={job.next_run_at ? formatKst(job.next_run_at) : "정기 실행 꺼짐"} />
           <Item label="수집 대상" value={`상품 ${job.active_products}개`} />
           <div>
             <dt className="text-xs text-zinc-500">마지막 실행</dt>
@@ -55,11 +56,40 @@ async function JobCard({ job }: { job: Job }) {
           </div>
         </dl>
         <p className="mt-2 text-sm text-zinc-500">{job.description}</p>
+        <div className="mt-4 grid gap-4 rounded-lg border border-zinc-200 bg-white p-5 sm:grid-cols-2">
+          <div>
+            <p className="mb-2 text-xs text-zinc-500">수동 실행</p>
+            <RunButton jobId={job.id} blocked={job.manual_run_blocked} />
+            {job.pending_request && <PendingRequest request={job.pending_request} />}
+          </div>
+          <div>
+            <p className="mb-2 text-xs text-zinc-500">주기 (매번 17분에 확인한다)</p>
+            <ScheduleForm jobId={job.id} intervalHours={job.interval_hours} enabled={job.enabled} />
+          </div>
+        </div>
       </Section>
       <Section title="흐름">
         <Flow run={lastRun} source={job.source} />
       </Section>
     </div>
+  );
+}
+
+/** 대기 중인 수동 실행 요청. 실행이 끝나면 그 실행에 연결되고 여기서 사라진다. */
+function PendingRequest({ request }: { request: NonNullable<Job["pending_request"]> }) {
+  return (
+    <p className="mt-2 text-sm text-zinc-600">
+      {formatKst(request.requested_at)} 요청 대기 중.{" "}
+      {request.workflow_run_url ? (
+        <a href={request.workflow_run_url} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline">
+          Actions 실행 보기
+        </a>
+      ) : request.dispatch_error ? (
+        `바로 실행 실패(${request.dispatch_error}), 다음 정기 호출 때 돈다`
+      ) : (
+        "다음 정기 호출 때 돈다"
+      )}
+    </p>
   );
 }
 

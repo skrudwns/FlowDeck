@@ -134,7 +134,7 @@ def api(session_factory):
     from fastapi.testclient import TestClient
 
     from flowdeck.api.app import create_app
-    from flowdeck.api.deps import get_session
+    from flowdeck.api.deps import get_dispatcher, get_session
 
     app = create_app()
 
@@ -143,5 +143,7 @@ def api(session_factory):
             yield session
 
     app.dependency_overrides[get_session] = test_session
+    # backend/.env에 토큰이 있어도 테스트가 실제 워크플로를 실행하지 않게 한다
+    app.dependency_overrides[get_dispatcher] = lambda: None
     with TestClient(app) as client:
         yield client

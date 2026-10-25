@@ -12,10 +12,10 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from flowdeck.models import CollectionRun, PriceSnapshot, Product, SellerPrice
+from flowdeck.models import CollectionRun, PriceSnapshot, Product, RunRequest, SellerPrice
 from flowdeck.polite_http import Blocked, DisallowedByRobots
 from flowdeck.sources import ListedProduct, ParseError, Source
 from flowdeck.targets import sync_products
@@ -32,7 +32,9 @@ def run_collection(
     source: Source,
     trigger: str = "schedule",
     now: Callable[[], datetime] = utc_now,
+    job_id: str | None = None,
 ) -> CollectionRun:
+    """job_id를 주면 그 작업의 대기 중인 수동 실행 요청을 이 실행에 연결한다 (ADR-0011)."""
     with session_factory() as session:
         run = CollectionRun(
             source=source.name,
@@ -53,12 +55,30 @@ def run_collection(
             run.status = "failed"
             run.error_message = f"예상하지 못한 오류: {e!r}"
             run.finished_at = now()
+            _link_requests(session, job_id, run)
             session.commit()
             raise
 
         run.finished_at = now()
+        _link_requests(session, job_id, run)
         session.commit()
         return run
+
+
+def _link_requests(session: Session, job_id: str | None, run: CollectionRun) -> None:
+    """실행 시작 전에 들어온 대기 요청을 처리한 것으로 본다. 실패한 실행에도 연결한다.
+    연결하지 않으면 다음 호출마다 같은 요청으로 다시 실행된다."""
+    if job_id is None:
+        return
+    session.execute(
+        update(RunRequest)
+        .where(
+            RunRequest.job_id == job_id,
+            RunRequest.status == "pending",
+            RunRequest.requested_at <= run.started_at,
+        )
+        .values(status="done", run_id=run.id)
+    )
 
 
 def _collect_all(

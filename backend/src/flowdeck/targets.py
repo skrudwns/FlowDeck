@@ -1,11 +1,10 @@
-"""수집 대상 목록 파일과 DB 맞추기.
+"""사이트에서 찾은 상품 목록과 DB 맞추기 (연습 쇼핑몰, ADR-0010).
 
-대상 목록을 파일(backend/targets/danawa.txt)로 두면 무엇을 언제 넣고 뺐는지가 git 이력에 남는다.
-파일에 없는 상품은 지우지 않고 비활성화만 한다. 이미 쌓인 가격 기록은 남긴다.
+목록에 없는 상품은 지우지 않고 비활성화만 한다. 이미 쌓인 가격 기록은 남긴다.
+다나와 수집 대상은 2026-10-25부터 파일이 아니라 DB가 기준이다 (ADR-0011).
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,20 +17,6 @@ class SyncResult:
     added: list[str]
     reactivated: list[str]
     deactivated: list[str]
-
-
-def read_targets(path: Path) -> list[str]:
-    """한 줄에 pcode 하나. # 뒤는 주석."""
-    pcodes = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        value = line.split("#", 1)[0].strip()
-        if not value:
-            continue
-        if not value.isdigit():
-            raise ValueError(f"{path}:{number} pcode는 숫자여야 함: {value!r}")
-        if value not in pcodes:
-            pcodes.append(value)
-    return pcodes
 
 
 def sync_products(session: Session, source: str, pcodes: list[str]) -> SyncResult:

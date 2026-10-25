@@ -12,6 +12,7 @@ const NAV = [
   { href: "/", label: "작업" },
   { href: "/runs", label: "실행 이력" },
   { href: "/products", label: "상품 가격" },
+  { href: "/activity", label: "변경 이력" },
 ];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

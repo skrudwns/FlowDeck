@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
@@ -6,7 +6,15 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import distinct_on
 
 from flowdeck.api.deps import SessionDep
-from flowdeck.api.schemas import LatestResult, PricePoint, ProductOut
+from flowdeck.api.schemas import (
+    CONTROL_ERRORS,
+    LatestResult,
+    PricePoint,
+    ProductCreate,
+    ProductOut,
+    ProductUpdate,
+)
+from flowdeck.control import add_danawa_product, set_product_active
 from flowdeck.models import PriceSnapshot, Product
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -57,6 +65,23 @@ def list_products(
     products = session.scalars(query).all()
     latest = _latest_results(session, [p.id for p in products])
     return [_to_out(p, latest.get(p.id)) for p in products]
+
+
+@router.post("", status_code=201, responses=CONTROL_ERRORS)
+def create_product(body: ProductCreate, session: SessionDep) -> ProductOut:
+    """다나와 pcode로 수집 대상 추가. 중지된 상품이면 다시 켠다. 활성 30개까지."""
+    product = add_danawa_product(session, body.source_product_id, "portal", datetime.now(UTC))
+    return _to_out(product, _latest_results(session, [product.id]).get(product.id))
+
+
+@router.patch("/{product_id}", responses=CONTROL_ERRORS)
+def update_product(product_id: int, body: ProductUpdate, session: SessionDep) -> ProductOut:
+    """수집 중지·재개. 지우지 않아서 가격 기록은 남는다."""
+    product = session.get(Product, product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="상품을 찾지 못함")
+    set_product_active(session, product, body.active, "portal", datetime.now(UTC))
+    return _to_out(product, _latest_results(session, [product.id]).get(product.id))
 
 
 @router.get("/{product_id}")

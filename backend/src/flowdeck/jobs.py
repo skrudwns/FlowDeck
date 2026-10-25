@@ -1,11 +1,10 @@
 """수집 작업 정의.
 
-실제로 실행을 거는 건 cron-job.org다 (ADR-0006). 여기 주기는 포털에 보여주고 다음 실행 시각을
-계산하는 데만 쓴다. 주기를 바꾸면 cron-job.org 설정도 같이 고쳐야 한다 (ADR-0009).
+작업 하나가 수집 대상 하나를 맡는다. 주기는 DB(job_schedules)에 있고 실행 판단은
+flowdeck.scheduler가 한다 (ADR-0011).
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 
 
 @dataclass(frozen=True)
@@ -14,18 +13,8 @@ class Job:
     name: str
     source: str
     description: str
-    # 매시 몇 분에 도는지. 지금 작업은 모두 1시간 주기다
-    minute_of_hour: int
-
-    @property
-    def schedule(self) -> str:
-        return f"매시 {self.minute_of_hour}분"
-
-    def next_run_after(self, now: datetime) -> datetime:
-        candidate = now.replace(minute=self.minute_of_hour, second=0, microsecond=0)
-        if candidate <= now:
-            candidate += timedelta(hours=1)
-        return candidate
+    # 한 시(한국 시간 HH:00~HH:59)에 한 번만 돈다. 다나와 수집 원칙 2의 해석 (ADR-0011)
+    one_run_per_hour: bool
 
 
 JOBS: tuple[Job, ...] = (
@@ -34,14 +23,19 @@ JOBS: tuple[Job, ...] = (
         name="다나와 가격 수집",
         source="danawa",
         description="다나와 상품 페이지에서 최저가, 판매처 수, 상위 판매처 가격을 모은다",
-        minute_of_hour=17,
+        one_run_per_hour=True,
     ),
-    # 같은 워크플로의 다른 작업으로 다나와와 같은 시각에 돈다 (ADR-0010)
     Job(
         id="mockshop-prices",
         name="연습 쇼핑몰 가격 수집",
         source="mockshop",
         description="연습 쇼핑몰 상품 목록을 돌며 판매처별 가격과 재고를 모은다",
-        minute_of_hour=17,
+        one_run_per_hour=False,
     ),
 )
+
+JOBS_BY_ID: dict[str, Job] = {j.id: j for j in JOBS}
+
+
+def job_for_source(source: str) -> Job:
+    return next(j for j in JOBS if j.source == source)

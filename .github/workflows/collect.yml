@@ -4,9 +4,12 @@ name: 가격 수집
 # 수집 원칙: docs/adr/0004-real-data-source-alternatives.md
 # 연습 쇼핑몰 수집: docs/adr/0010-mock-shop.md
 #
+# 포털 제어와 스케줄러: docs/adr/0011-portal-control-and-scheduler.md
+#
 # GitHub Actions 예약 실행(schedule)은 이 저장소에서 돌지 않았다 (TS-0003).
 # 그래서 외부 cron 서비스가 매시 17분에 GitHub API로 workflow_dispatch를 호출한다 (ADR-0006).
-# 이때 trigger 입력으로 schedule을 넘겨서 실행 기록에서 직접 누른 수동 실행과 구분한다.
+# 호출되면 plan 작업이 DB의 주기와 수동 실행 요청을 보고 이번에 돌 작업만 정한다.
+# trigger 입력은 호출한 쪽이다: schedule(cron-job.org), portal(포털 바로 실행), manual(GitHub 화면).
 # cron-job.org가 이 파일 이름(collect.yml)으로 호출하니 이름을 바꾸지 않는다.
 on:
   workflow_dispatch:
@@ -17,6 +20,7 @@ on:
         options:
           - manual
           - schedule
+          - portal
         default: manual
 
 # 이전 실행이 아직 돌고 있으면 겹치지 않게 기다린다
@@ -25,8 +29,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 두 수집 작업이 동시에 마이그레이션하지 않게 먼저 한 번만 한다
-  migrate:
+  # 마이그레이션은 두 수집 작업이 동시에 하지 않게 여기서 한 번만 한다
+  plan:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
@@ -34,6 +38,13 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # 이번에 돌지 않는 작업도 스케줄러가 돌았다는 신호를 보낸다 (ADR-0011 감시)
+      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      MOCKSHOP_HEALTHCHECK_URL: ${{ secrets.MOCKSHOP_HEALTHCHECK_URL }}
+    # 수집 대상별 실행 종류: schedule / manual / 빈 값(건너뜀)
+    outputs:
+      danawa: ${{ steps.plan.outputs.danawa }}
+      mockshop: ${{ steps.plan.outputs.mockshop }}
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.2
@@ -43,9 +54,16 @@ jobs:
       - run: uv sync --frozen --no-dev
       - name: DB 스키마 최신으로
         run: uv run alembic upgrade head
+      - name: 이번에 돌 작업 정하기
+        id: plan
+        env:
+          # 입력값을 명령어에 직접 끼워 넣지 않고 환경 변수로 넘긴다
+          TRIGGER: ${{ inputs.trigger }}
+        run: uv run flowdeck plan --trigger "$TRIGGER" --github-output "$GITHUB_OUTPUT"
 
   danawa:
-    needs: migrate
+    needs: plan
+    if: needs.plan.outputs.danawa != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -64,17 +82,15 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --no-dev
 
-      - name: 수집 대상 목록 반영
-        run: uv run flowdeck products sync targets/danawa.txt
-
+      # 수집 대상은 DB가 기준이다. 포털이나 flowdeck products로 바꾼다 (ADR-0011)
       - name: 수집
         env:
-          # 입력값을 명령어에 직접 끼워 넣지 않고 환경 변수로 넘긴다
-          TRIGGER: ${{ inputs.trigger }}
+          TRIGGER: ${{ needs.plan.outputs.danawa }}
         run: uv run flowdeck collect --trigger "$TRIGGER"
 
   mockshop:
-    needs: migrate
+    needs: plan
+    if: needs.plan.outputs.mockshop != ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -83,7 +99,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       # 다나와와 다른 체크로 보낸다 (ADR-0010). 없으면 신호 없이 수집만 한다
-      HEALTHCHECK_URL: ${{ secrets.MOCKSHOP_HEALTHCHECK_URL }}
+      MOCKSHOP_HEALTHCHECK_URL: ${{ secrets.MOCKSHOP_HEALTHCHECK_URL }}
 
     steps:
       - uses: actions/checkout@v7.0.1
@@ -108,7 +124,7 @@ jobs:
 
       - name: 수집
         env:
-          TRIGGER: ${{ inputs.trigger }}
+          TRIGGER: ${{ needs.plan.outputs.mockshop }}
         run: uv run flowdeck collect --source mockshop --trigger "$TRIGGER"
 
       - name: 쇼핑몰 로그
