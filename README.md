@@ -11,16 +11,16 @@
 - 다나와 상품 20개의 가격을 1시간마다 수집해서 Postgres(Neon)에 쌓는다.
   - 상품마다 최저가, 판매처 수, 상위 판매처(페이지에 나오는 만큼, 지금까지 본 최대는 10곳)의 판매처 이름·가격·배송비
   - 실행마다 성공·실패 여부와 실패 원인을 기록한다.
-- 수집 대상은 [backend/targets/danawa.txt](backend/targets/danawa.txt) 파일로 관리한다. 파일을 고쳐서 main에 합치면 다음 수집부터 반영된다.
+- 포털에서 직접 제어한다: 수동 실행, 주기 변경(1~24시간, 끄기), 다나와 수집 대상 추가·중지·재개. 바꾼 내용은 변경 이력에 남는다 ([ADR-0011](docs/adr/0011-portal-control-and-scheduler.md)).
 - 공개 데모용 연습 쇼핑몰([mock-shop/](mock-shop/README.md))도 같은 시각에 수집한다. 상품 목록 페이지를 돌며 상품을 찾고, 판매처별 가격과 품절을 모은다. 가격은 요일 할인, 급락, 품절 같은 규칙으로 바뀌어서 분석 결과를 맞춰 볼 정답이 있다. 다나와에서 모은 데이터는 공개하지 않고, 데모는 이 데이터로 보여줄 예정이다.
 - 수집이 끝날 때마다 Healthchecks.io로 신호를 보낸다. 신호가 끊기거나 문제가 있으면 이메일로 알림이 온다.
-- 읽기 전용 포털 API(FastAPI): 작업, 상품과 최근 결과, 가격 이력, 판매처 가격, 수집 실행 이력.
-- 포털 웹(Next.js): 작업 목록과 단계 흐름, 실행 이력과 실패 원인, 상품 가격 표·차트·판매처 가격. API와 웹 모두 아직 로컬에서만 띄운다.
+- 포털 API(FastAPI): 작업, 상품과 최근 결과, 가격 이력, 판매처 가격, 수집 실행 이력 조회와 제어(수동 실행 요청, 주기, 대상).
+- 포털 웹(Next.js): 작업 목록과 단계 흐름, 실행 이력과 실패 원인, 상품 가격 표·차트·판매처 가격, 수동 실행·주기·대상 관리, 변경 이력. API와 웹 모두 아직 로컬에서만 띄운다. 인증이 없어서 배포 전에 넣어야 한다.
 - push와 PR마다 린트와 테스트가 돈다. DB 테스트는 실제 Postgres에서 돈다.
 
 ## 아직 없는 것
 
-- 포털 제어 기능 (수동 실행, 주기 변경, 대상 관리, 알림 설정), CSV·엑셀 다운로드
+- 알림 설정 화면, CSV·엑셀 다운로드
 - 배포와 인증
 - 가격 분석 (급락 감지, 할인 패턴 등). 데이터가 몇 주 쌓인 뒤 시작한다.
 
@@ -29,10 +29,14 @@
 ```mermaid
 flowchart LR
     cron["cron-job.org<br/>매시 17분"] -->|"GitHub API<br/>workflow_dispatch"| gha["GitHub Actions<br/>collect.yml"]
+    portal["포털<br/>지금 실행"] -->|"GitHub API<br/>workflow_dispatch"| gha
+    gha -->|"plan: DB의 주기와<br/>실행 요청으로 돌 작업 결정"| neon
     gha -->|"robots.txt 확인 후<br/>상품 페이지 요청<br/>(3초 간격)"| danawa["다나와<br/>상품 페이지"]
     gha -->|"작업 안에서 띄운 뒤<br/>목록·상품 페이지 요청"| shop["연습 쇼핑몰<br/>(mock-shop)"]
     gha -->|"최저가, 판매처 가격,<br/>실행 기록 저장"| neon[("Neon<br/>Postgres")]
 ```
+
+워크플로는 호출될 때마다 먼저 DB의 주기와 수동 실행 요청을 보고 이번에 돌 작업만 실행한다. 그래서 주기를 바꿔도 cron-job.org 설정은 그대로다 ([ADR-0011](docs/adr/0011-portal-control-and-scheduler.md)).
 
 처음에는 GitHub Actions 예약 실행(schedule)을 쓰려고 했는데, 이 저장소에서는 예약 실행이 한 번도 돌지 않았다. 그래서 외부 cron 서비스가 GitHub API로 워크플로를 실행하게 바꿨다 ([TS-0003](docs/troubleshooting/0003-scheduled-workflow-not-running.md), [ADR-0006](docs/adr/0006-external-cron-trigger.md)).
 
@@ -40,7 +44,7 @@ flowchart LR
 
 다나와 이용약관과 robots.txt를 확인하고, 법적 위험을 줄이는 쪽으로 정했다. 법률 검토를 받은 것은 아니다. 자세한 근거는 [ADR-0004](docs/adr/0004-real-data-source-alternatives.md).
 
-- 소수 상품만, 1시간에 한 번, 요청 사이 3초 간격
+- 소수 상품만(포털에서도 30개까지), 한 시에 한 번(수동 실행 포함), 요청 사이 3초 간격
 - robots.txt가 막은 경로는 요청하지 않는다. 판매처 전체 목록이 그런 경로라서 처음 받는 페이지에 있는 상위 판매처만 쓴다.
 - 브라우저로 위장하지 않고 수집기 이름을 밝힌 User-Agent를 쓴다.
 - 403, 429 같은 차단 응답을 받으면 우회하지 않고 멈춘다.
@@ -55,14 +59,14 @@ flowchart LR
 | 수집 | httpx, selectolax | httpx는 ADR-0001에서 정했다. selectolax는 비교 없이 골랐다 ([일지 10-24](docs/devlog/2026-10-24.md)) |
 | DB | PostgreSQL 17, SQLAlchemy, Alembic | [ADR-0001](docs/adr/0001-tech-stack.md), [ADR-0005](docs/adr/0005-collector-data-model.md) |
 | 실행 | GitHub Actions, Neon, cron-job.org | [ADR-0003](docs/adr/0003-collector-runtime.md), [ADR-0006](docs/adr/0006-external-cron-trigger.md) |
+| 스케줄러, 작업 큐 | DB의 주기 + Actions 호출마다 판단, Postgres 테이블 | [ADR-0011](docs/adr/0011-portal-control-and-scheduler.md) |
 | 감시 | Healthchecks.io | [ADR-0007](docs/adr/0007-collection-monitoring.md) |
 | 웹 | Next.js 16, TypeScript, Tailwind CSS, Recharts | [ADR-0001](docs/adr/0001-tech-stack.md), [ADR-0009](docs/adr/0009-portal-web-structure.md) |
 
 ## 저장소 구조
 
 ```
-backend/     수집기, 포털 API, DB 모델, 마이그레이션, CLI
-  targets/   수집 대상 상품 목록
+backend/     수집기, 스케줄러, 포털 API, DB 모델, 마이그레이션, CLI
 docs/        개발 기록 (ADR, 트러블슈팅, 일지, 분석 노트)
 web/         포털 웹 (Next.js)
 mock-shop/   공개 데모용 연습 쇼핑몰 (FastAPI)
@@ -73,7 +77,7 @@ compose.yaml 로컬 개발용 Postgres
 
 ## 로컬에서 실행
 
-[backend/README.md](backend/README.md), [web/README.md](web/README.md)를 본다. Docker로 Postgres를 띄우고 `uv run flowdeck collect`로 한 번 수집한 뒤, API와 웹을 띄우면 화면에서 볼 수 있다.
+[backend/README.md](backend/README.md), [web/README.md](web/README.md)를 본다. Docker로 Postgres를 띄우고 `uv run flowdeck products add <pcode>`로 대상을 넣고 `uv run flowdeck collect`로 한 번 수집한 뒤, API와 웹을 띄우면 화면에서 볼 수 있다.
 
 ## 개발 기록
 
