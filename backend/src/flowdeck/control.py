@@ -29,7 +29,8 @@ log = logging.getLogger(__name__)
 
 
 class ControlError(Exception):
-    """요청을 받을 수 없는 이유. status는 API 응답 코드로 쓴다."""
+    """요청을 받을 수 없는 이유. status는 API 응답 코드로 쓴다.
+    입력 오류는 400. FastAPI 검증 오류(422)와 응답 형식이 달라서 섞지 않는다."""
 
     def __init__(self, message: str, status: int = 409):
         super().__init__(message)
@@ -64,7 +65,7 @@ def add_danawa_product(session: Session, pcode: str, actor: str, now: datetime) 
     """없으면 추가하고, 중지된 상품이면 다시 켠다."""
     pcode = pcode.strip()
     if not pcode.isdigit():
-        raise ControlError(f"pcode는 숫자여야 함: {pcode!r}", status=422)
+        raise ControlError(f"pcode는 숫자여야 함: {pcode!r}", status=400)
     product = session.scalar(
         select(Product).where(Product.source == DANAWA, Product.source_product_id == pcode)
     )
@@ -109,7 +110,7 @@ def update_schedule(
 ) -> Schedule:
     if interval_hours is not None and interval_hours not in INTERVAL_CHOICES:
         choices = ", ".join(str(c) for c in INTERVAL_CHOICES)
-        raise ControlError(f"주기는 {choices}시간 중 하나", status=422)
+        raise ControlError(f"주기는 {choices}시간 중 하나", status=400)
     before = get_schedule(session, job.id)
     after = Schedule(
         interval_hours=before.interval_hours if interval_hours is None else interval_hours,

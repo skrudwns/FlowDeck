@@ -74,6 +74,31 @@ class RunDetail(RunOut):
     results: list[RunProductResult]
 
 
+class ErrorOut(BaseModel):
+    """제어 요청을 받을 수 없을 때. detail에 이유를 담는다."""
+
+    detail: str
+
+
+class RunRequestOut(_FromORM):
+    id: int
+    job_id: str
+    requested_at: datetime
+    # pending / done
+    status: str
+    run_id: int | None
+    dispatched_at: datetime | None
+    workflow_run_url: str | None
+    dispatch_error: str | None
+
+
+class JobUpdate(BaseModel):
+    """바꿀 값만 보낸다."""
+
+    interval_hours: int | None = None
+    enabled: bool | None = None
+
+
 class JobOut(BaseModel):
     id: str
     name: str
@@ -86,3 +111,6 @@ class JobOut(BaseModel):
     next_run_at: datetime | None
     active_products: int
     last_run: RunOut | None
+    pending_request: RunRequestOut | None
+    # 지금 수동 실행을 요청할 수 없는 이유. 요청할 수 있으면 비어 있다
+    manual_run_blocked: str | None

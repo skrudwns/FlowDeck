@@ -51,7 +51,7 @@ def test_add_reactivates_stopped_product(session_factory):
 
 @pytest.mark.parametrize(
     ("pcode", "status"),
-    [("abc", 422), ("1", 409)],
+    [("abc", 400), ("1", 409)],
 )
 def test_add_rejects_invalid_or_duplicate(session_factory, pcode, status):
     with session_factory() as session:
@@ -116,7 +116,7 @@ def test_update_schedule_rejects_unknown_interval(session_factory):
     with session_factory() as session:
         with pytest.raises(ControlError) as exc:
             update_schedule(session, MOCKSHOP, "portal", NOW, interval_hours=5)
-        assert exc.value.status == 422
+        assert exc.value.status == 400
 
 
 class FakeDispatcher:

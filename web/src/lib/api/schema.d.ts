@@ -38,6 +38,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Job
+         * @description 주기(시간), 정기 실행 켜짐을 바꾼다. 꺼도 수동 실행은 된다.
+         */
+        patch: operations["update_job_jobs__job_id__patch"];
+        trace?: never;
+    };
+    "/jobs/{job_id}/run-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Run Request
+         * @description 수동 실행 요청. GitHub 토큰이 있으면 워크플로를 바로 실행하고, 없거나 실패하면
+         *     다음 정기 호출(매시 17분) 때 실행된다.
+         */
+        post: operations["create_run_request_jobs__job_id__run_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products": {
         parameters: {
             query?: never;
@@ -156,6 +197,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ErrorOut
+         * @description 제어 요청을 받을 수 없을 때. detail에 이유를 담는다.
+         */
+        ErrorOut: {
+            /** Detail */
+            detail: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -182,6 +231,19 @@ export interface components {
             /** Active Products */
             active_products: number;
             last_run: components["schemas"]["RunOut"] | null;
+            pending_request: components["schemas"]["RunRequestOut"] | null;
+            /** Manual Run Blocked */
+            manual_run_blocked: string | null;
+        };
+        /**
+         * JobUpdate
+         * @description 바꿀 값만 보낸다.
+         */
+        JobUpdate: {
+            /** Interval Hours */
+            interval_hours?: number | null;
+            /** Enabled */
+            enabled?: boolean | null;
         };
         /**
          * LatestResult
@@ -306,6 +368,28 @@ export interface components {
             /** Error Message */
             error_message: string | null;
         };
+        /** RunRequestOut */
+        RunRequestOut: {
+            /** Id */
+            id: number;
+            /** Job Id */
+            job_id: string;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Status */
+            status: string;
+            /** Run Id */
+            run_id: number | null;
+            /** Dispatched At */
+            dispatched_at: string | null;
+            /** Workflow Run Url */
+            workflow_run_url: string | null;
+            /** Dispatch Error */
+            dispatch_error: string | null;
+        };
         /** SellerOut */
         SellerOut: {
             /** Rank */
@@ -381,6 +465,126 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobOut"][];
+                };
+            };
+        };
+    };
+    update_job_jobs__job_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_run_request_jobs__job_id__run_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRequestOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

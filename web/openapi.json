@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "FlowDeck API",
-    "description": "수집 대상, 가격 이력, 수집 실행 이력 조회 (읽기 전용)",
+    "description": "수집 대상, 가격 이력, 수집 실행 이력 조회와 수동 실행·주기·대상 관리",
     "version": "0.1.0"
   },
   "paths": {
@@ -49,6 +49,162 @@
                   },
                   "type": "array",
                   "title": "Response List Jobs Jobs Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}": {
+      "patch": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Update Job",
+        "description": "주기(시간), 정기 실행 켜짐을 바꾼다. 꺼도 수동 실행은 된다.",
+        "operationId": "update_job_jobs__job_id__patch",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/run-requests": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Create Run Request",
+        "description": "수동 실행 요청. GitHub 토큰이 있으면 워크플로를 바로 실행하고, 없거나 실패하면\n다음 정기 호출(매시 17분) 때 실행된다.",
+        "operationId": "create_run_request_jobs__job_id__run_requests_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRequestOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -439,6 +595,20 @@
   },
   "components": {
     "schemas": {
+      "ErrorOut": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorOut",
+        "description": "제어 요청을 받을 수 없을 때. detail에 이유를 담는다."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -507,6 +677,27 @@
                 "type": "null"
               }
             ]
+          },
+          "pending_request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunRequestOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manual_run_blocked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Run Blocked"
           }
         },
         "type": "object",
@@ -520,9 +711,40 @@
           "enabled",
           "next_run_at",
           "active_products",
-          "last_run"
+          "last_run",
+          "pending_request",
+          "manual_run_blocked"
         ],
         "title": "JobOut"
+      },
+      "JobUpdate": {
+        "properties": {
+          "interval_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Hours"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "title": "JobUpdate",
+        "description": "바꿀 값만 보낸다."
       },
       "LatestResult": {
         "properties": {
@@ -898,6 +1120,84 @@
           "error_message"
         ],
         "title": "RunProductResult"
+      },
+      "RunRequestOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Requested At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "dispatched_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispatched At"
+          },
+          "workflow_run_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Run Url"
+          },
+          "dispatch_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispatch Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "requested_at",
+          "status",
+          "run_id",
+          "dispatched_at",
+          "workflow_run_url",
+          "dispatch_error"
+        ],
+        "title": "RunRequestOut"
       },
       "SellerOut": {
         "properties": {
