@@ -85,7 +85,7 @@ function PendingRequest({ request }: { request: NonNullable<Job["pending_request
           Actions 실행 보기
         </a>
       ) : request.dispatch_error ? (
-        `바로 실행 실패(${request.dispatch_error}), 다음 정기 호출 때 돈다`
+        request.dispatch_error
       ) : (
         "다음 정기 호출 때 돈다"
       )}
