@@ -4,16 +4,13 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
 
 from flowdeck.api.deps import DispatcherDep, SessionDep
-from flowdeck.api.schemas import ErrorOut, JobOut, JobUpdate, RunOut, RunRequestOut
+from flowdeck.api.schemas import CONTROL_ERRORS, JobOut, JobUpdate, RunOut, RunRequestOut
 from flowdeck.control import manual_run_block, request_run, update_schedule
 from flowdeck.jobs import JOBS, JOBS_BY_ID, Job
 from flowdeck.models import CollectionRun, Product, RunRequest
 from flowdeck.scheduler import get_schedule, next_run_at
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
-
-# 제어 요청을 받을 수 없을 때 (flowdeck.control.ControlError)
-CONTROL_ERRORS = {400: {"model": ErrorOut}, 404: {"model": ErrorOut}, 409: {"model": ErrorOut}}
 
 
 def _get_job(job_id: str) -> Job:

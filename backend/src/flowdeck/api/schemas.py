@@ -29,6 +29,25 @@ class ProductOut(_FromORM):
     latest: LatestResult | None = None
 
 
+class ProductCreate(BaseModel):
+    """다나와 상품 추가. 연습 쇼핑몰 상품은 쇼핑몰 목록으로 정해진다 (ADR-0010)."""
+
+    source_product_id: str
+
+
+class ProductUpdate(BaseModel):
+    active: bool
+
+
+class AuditLogOut(_FromORM):
+    id: int
+    at: datetime
+    actor: str
+    action: str
+    target: str
+    detail: str | None
+
+
 class PricePoint(_FromORM):
     snapshot_id: int
     collected_at: datetime
@@ -78,6 +97,10 @@ class ErrorOut(BaseModel):
     """제어 요청을 받을 수 없을 때. detail에 이유를 담는다."""
 
     detail: str
+
+
+# 제어 엔드포인트의 오류 응답 (flowdeck.control.ControlError). OpenAPI 문서와 웹 타입에 들어간다
+CONTROL_ERRORS = {400: {"model": ErrorOut}, 404: {"model": ErrorOut}, 409: {"model": ErrorOut}}
 
 
 class RunRequestOut(_FromORM):

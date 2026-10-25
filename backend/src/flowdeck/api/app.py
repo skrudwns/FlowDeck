@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from flowdeck.api.deps import SessionDep
-from flowdeck.api.routes import jobs, products, runs, snapshots
+from flowdeck.api.routes import audit, jobs, products, runs, snapshots
 from flowdeck.control import ControlError
 
 
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(products.router)
     app.include_router(snapshots.router)
     app.include_router(runs.router)
+    app.include_router(audit.router)
     return app
 
 
