@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # Healthchecks.io 체크 주소 (ADR-0007). 없으면 신호를 보내지 않는다.
     # 주소를 알면 누구나 가짜 신호를 보낼 수 있어서 비밀 값으로 다룬다.
     healthcheck_url: SecretStr | None = None
+    # 연습 쇼핑몰 수집 체크 (ADR-0010). 다나와와 따로 둔다
+    mockshop_healthcheck_url: SecretStr | None = None
 
 
 @lru_cache
