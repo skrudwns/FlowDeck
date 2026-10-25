@@ -64,3 +64,17 @@ def test_no_dispatcher_without_token(monkeypatch):
 
     monkeypatch.setenv("PORTAL_GITHUB_TOKEN", "x")
     assert make_dispatcher(Settings(_env_file=None)) is not None
+
+
+def test_actions_env_vars_do_not_change_dispatch_target(monkeypatch):
+    # GitHub Actions는 GITHUB_REPOSITORY, GITHUB_REF를 자동으로 넣는다.
+    # GITHUB_REF는 refs/heads/main 형식이라 그대로 읽으면 ref가 잘못된다
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@db.example.com/db")
+    monkeypatch.setenv("PORTAL_GITHUB_TOKEN", "x")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "someone/else")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+
+    dispatcher = make_dispatcher(Settings(_env_file=None))
+
+    assert dispatcher._url == URL.replace("o/r", "skrudwns/FlowDeck")
+    assert dispatcher._ref == "main"
