@@ -25,7 +25,8 @@ export async function requestRun(jobId: string): Promise<ActionResult> {
   if (!data) return failure(error, response.status);
   refresh();
   if (data.dispatch_error) {
-    return { ok: true, message: `요청을 남겼다. 바로 실행은 실패해서 다음 정기 호출 때 돈다 (${data.dispatch_error})` };
+    // 바로 실행하지 않은 이유와 그 뒤에 어떻게 되는지가 문장으로 온다 (로컬 DB, GitHub 오류)
+    return { ok: true, message: `요청을 남겼다. ${data.dispatch_error}` };
   }
   if (!data.dispatched_at) {
     return { ok: true, message: "요청을 남겼다. GitHub 토큰이 없어서 다음 정기 호출 때 돈다" };

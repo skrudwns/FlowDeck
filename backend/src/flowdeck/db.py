@@ -1,7 +1,7 @@
 """DB 연결."""
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
 from flowdeck.config import get_settings
@@ -16,6 +16,11 @@ def sqlalchemy_url(raw: str) -> str:
         if raw.startswith(prefix):
             return "postgresql+psycopg://" + raw.removeprefix(prefix)
     return raw
+
+
+def is_local_database(raw: str) -> bool:
+    """개발 Mac의 Postgres인지. 호스트가 없으면 유닉스 소켓이라 로컬로 본다."""
+    return make_url(sqlalchemy_url(raw)).host in (None, "localhost", "127.0.0.1", "::1")
 
 
 def make_engine(url: str | None = None) -> Engine:

@@ -22,11 +22,12 @@ class Settings(BaseSettings):
     mockshop_healthcheck_url: SecretStr | None = None
 
     # 포털에서 수집 워크플로를 바로 실행할 때 쓴다 (ADR-0011). 없으면 다음 정기 호출 때 실행된다.
-    # Actions가 자동으로 주는 GITHUB_TOKEN과 헷갈리지 않게 이름을 따로 둔다
+    # 모두 PORTAL_ 접두어를 붙인다. Actions가 자동으로 넣는 GITHUB_TOKEN, GITHUB_REPOSITORY,
+    # GITHUB_REF(refs/heads/main 형식)와 이름이 겹치면 그 값을 읽게 된다
     portal_github_token: SecretStr | None = None
-    github_repository: str = "skrudwns/FlowDeck"
-    collect_workflow: str = "collect.yml"
-    github_ref: str = "main"
+    portal_github_repository: str = "skrudwns/FlowDeck"
+    portal_collect_workflow: str = "collect.yml"
+    portal_github_ref: str = "main"
 
 
 @lru_cache

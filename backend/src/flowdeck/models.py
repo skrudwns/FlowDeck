@@ -126,7 +126,7 @@ class RunRequest(Base):
     status: Mapped[str] = mapped_column(String(20))
     # 이 요청을 처리한 수집 실행
     run_id: Mapped[int | None] = mapped_column(ForeignKey("collection_runs.id"))
-    # GitHub Actions 바로 실행 결과. 실패하면 다음 정기 호출 때 실행된다
+    # GitHub Actions 바로 실행 결과. dispatch_error는 바로 실행하지 않은(못한) 이유 문장
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     workflow_run_url: Mapped[str | None] = mapped_column(Text)
     dispatch_error: Mapped[str | None] = mapped_column(Text)

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import httpx
 
 from flowdeck.config import Settings
+from flowdeck.db import is_local_database
 
 API_URL = "https://api.github.com"
 # ADR-0006에서 확인한 버전. 이 버전부터 성공 응답이 200과 실행 ID다
@@ -51,12 +52,15 @@ class WorkflowDispatcher:
                 },
             )
         except httpx.HTTPError as e:
-            raise DispatchError(f"GitHub 요청 실패: {type(e).__name__}") from None
+            raise DispatchError(
+                f"GitHub 요청 실패({type(e).__name__}). 다음 정기 호출 때 실행된다"
+            ) from None
         if response.status_code == 204:
             # 예전 API 버전의 응답. 실행 ID가 없다
             return DispatchResult(workflow_run_id=None, html_url=None)
         if response.status_code != 200:
-            raise DispatchError(f"GitHub 응답 {response.status_code}: {_message(response)}")
+            status = f"GitHub 응답 {response.status_code}({_message(response)})"
+            raise DispatchError(f"{status}. 다음 정기 호출 때 실행된다")
         data = response.json()
         return DispatchResult(
             workflow_run_id=data.get("workflow_run_id"), html_url=data.get("html_url")
@@ -70,13 +74,29 @@ def _message(response: httpx.Response) -> str:
         return ""
 
 
-def make_dispatcher(settings: Settings) -> WorkflowDispatcher | None:
-    """토큰이 없으면 None. 그때 수동 실행 요청은 다음 정기 호출 때 실행된다."""
+class LocalDatabaseDispatcher:
+    """로컬 DB에 붙은 포털용. 실행하지 않고 이유만 알린다.
+
+    수집 워크플로는 Neon을 본다. 로컬 DB에 남긴 요청으로 워크플로를 실행하면 plan이 요청을
+    찾지 못해 아무 작업도 돌지 않는다 (2026-10-25 Actions run 40164621661에서 확인).
+    """
+
+    def dispatch(self, inputs: dict[str, str]) -> DispatchResult:
+        raise DispatchError(
+            "로컬 DB에 연결된 포털이라 GitHub 바로 실행을 하지 않음. "
+            "이 요청은 로컬에서 flowdeck plan, collect로 처리된다"
+        )
+
+
+def make_dispatcher(settings: Settings) -> WorkflowDispatcher | LocalDatabaseDispatcher | None:
+    """로컬 DB면 실행하지 않는 디스패처, 토큰이 없으면 None(다음 정기 호출 때 실행)."""
+    if is_local_database(settings.database_url.get_secret_value()):
+        return LocalDatabaseDispatcher()
     if not settings.portal_github_token or not settings.portal_github_token.get_secret_value():
         return None
     return WorkflowDispatcher(
         token=settings.portal_github_token.get_secret_value(),
-        repository=settings.github_repository,
-        workflow=settings.collect_workflow,
-        ref=settings.github_ref,
+        repository=settings.portal_github_repository,
+        workflow=settings.portal_collect_workflow,
+        ref=settings.portal_github_ref,
     )
