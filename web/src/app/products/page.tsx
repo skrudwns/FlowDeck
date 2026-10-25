@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { AddProductForm, ProductToggle } from "@/components/controls";
 import { Loading } from "@/components/section";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api/client";
@@ -14,6 +15,12 @@ const SOURCE_FILTERS = [
   { value: "mockshop", label: "연습 쇼핑몰" },
 ];
 
+const ACTIVE_FILTERS = [
+  { value: "", label: "수집 중" },
+  { value: "inactive", label: "중지됨" },
+  { value: "all", label: "전체 상품" },
+];
+
 const STATUS_FILTERS = [
   { value: "", label: "전체" },
   { value: "ok", label: "정상" },
@@ -24,6 +31,12 @@ export default function ProductsPage({ searchParams }: PageProps<"/products">) {
   return (
     <>
       <h1 className="mb-6 text-2xl font-bold">상품 가격</h1>
+      <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4">
+        <p className="mb-2 text-xs text-zinc-500">
+          다나와 수집 대상은 30개까지. 연습 쇼핑몰 상품은 쇼핑몰 목록으로 정해진다.
+        </p>
+        <AddProductForm />
+      </div>
       <Suspense fallback={<Loading />}>
         <ProductsTable searchParams={searchParams} />
       </Suspense>
@@ -36,9 +49,11 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
   const q = typeof params.q === "string" ? params.q.trim() : "";
   const status = typeof params.status === "string" ? params.status : "";
   const source = typeof params.source === "string" ? params.source : "";
+  const shown = typeof params.shown === "string" ? params.shown : "";
 
   // 수집 대상은 수십 개라 한 번에 받아서 거른다. 많아지면 API에 검색을 넣는다
-  const all = unwrap(await api.GET("/products", { params: { query: { active: true, limit: 500 } } }));
+  const everything = unwrap(await api.GET("/products", { params: { query: { limit: 500 } } }));
+  const all = everything.filter((p) => (shown === "all" ? true : shown === "inactive" ? !p.active : p.active));
   const products = all.filter((p) => {
     const text = `${p.name ?? ""} ${p.source_product_id}`.toLowerCase();
     if (q && !text.includes(q.toLowerCase())) return false;
@@ -59,6 +74,13 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
         />
         <select name="source" defaultValue={source} className="rounded border border-zinc-300 bg-white px-2 py-1.5">
           {SOURCE_FILTERS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <select name="shown" defaultValue={shown} className="rounded border border-zinc-300 bg-white px-2 py-1.5">
+          {ACTIVE_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
               {f.label}
             </option>
@@ -86,6 +108,7 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
               <th className="px-4 py-2 text-right">판매처 수</th>
               <th className="px-4 py-2">최근 상태</th>
               <th className="px-4 py-2">수집 시각</th>
+              <th className="px-4 py-2">수집 대상</th>
             </tr>
           </thead>
           <tbody>
@@ -103,11 +126,19 @@ async function ProductsTable({ searchParams }: { searchParams: Search }) {
                 <td className="px-4 py-2 text-right">{p.latest?.offer_count ?? "-"}</td>
                 <td className="px-4 py-2">{p.latest ? <StatusBadge status={p.latest.status} /> : "-"}</td>
                 <td className="px-4 py-2 whitespace-nowrap">{formatKst(p.latest?.collected_at)}</td>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  <span className={p.active ? "" : "text-zinc-400"}>{p.active ? "수집 중" : "중지됨"}</span>
+                  {p.source === "danawa" && (
+                    <span className="ml-2 inline-block">
+                      <ProductToggle productId={p.id} active={p.active} />
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-zinc-500">
                   조건에 맞는 상품이 없다
                 </td>
               </tr>
