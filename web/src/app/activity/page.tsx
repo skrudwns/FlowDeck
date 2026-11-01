@@ -11,9 +11,10 @@ const ACTIONS: Record<string, string> = {
   product_deactivated: "수집 대상 중지",
   schedule_changed: "주기 변경",
   run_requested: "수동 실행 요청",
+  data_fixed: "데이터 정정",
 };
 
-const ACTORS: Record<string, string> = { portal: "포털", cli: "CLI" };
+const ACTORS: Record<string, string> = { portal: "포털", cli: "CLI", migration: "마이그레이션" };
 
 export default function ActivityPage() {
   return (
