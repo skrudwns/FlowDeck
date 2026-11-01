@@ -1,0 +1,15 @@
+[project]
+name = "flowdeck-analysis"
+version = "0.1.0"
+description = "FlowDeck 분석 노트(docs/analysis/)의 코드. 수집 DB를 읽어 탐색한다"
+requires-python = ">=3.13"
+dependencies = [
+    "flowdeck",
+    "matplotlib>=3.11.2",
+    "pandas>=3.1.0",
+    "pyarrow>=26.0.0",
+    "python-dotenv>=1.2.4",
+]
+
+[tool.uv.sources]
+flowdeck = { path = "../backend", editable = true }
