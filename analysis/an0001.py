@@ -84,7 +84,10 @@ ok["pct"] = ok.change / ok.prev_price * 100
 pairs = ok[ok.prev_price.notna()]
 changes = pairs[pairs.change != 0].copy()
 
-print(f"연속 수집 쌍 {len(pairs)}개 중 최저가가 바뀐 쌍 {len(changes)}개 ({len(changes) / len(pairs):.1%})")
+print(
+    f"연속 수집 쌍 {len(pairs)}개 중 최저가가 바뀐 쌍 {len(changes)}개",
+    f"({len(changes) / len(pairs):.1%})",
+)
 print("바뀐 금액(원) 분위수:", changes.change.abs().quantile([0.25, 0.5, 0.75, 0.9]).to_dict())
 
 per_product = (
@@ -96,7 +99,9 @@ per_product = (
                 "변동률%": (g.change != 0).mean() * 100,
                 "5%이상": (g.pct.abs() >= 5).sum(),
                 "판매처수": g.offer_count.median(),
-                "범위%": (g.lowest_price.max() - g.lowest_price.min()) / g.lowest_price.median() * 100,
+                "범위%": (g.lowest_price.max() - g.lowest_price.min())
+                / g.lowest_price.median()
+                * 100,
             }
         ),
         include_groups=False,
@@ -106,7 +111,9 @@ per_product = (
 print(per_product.round(1).to_string())
 
 changes["크기"] = pd.cut(
-    changes.pct.abs(), [0, 0.1, 1, 5, 20, np.inf], labels=["<0.1%", "0.1~1%", "1~5%", "5~20%", "20%~"]
+    changes.pct.abs(),
+    [0, 0.1, 1, 5, 20, np.inf],
+    labels=["<0.1%", "0.1~1%", "1~5%", "5~20%", "20%~"],
 )
 changes["1위교체"] = changes.top_seller != changes.prev_top
 print(pd.crosstab(changes["크기"], changes["1위교체"], margins=True).to_string())
@@ -146,7 +153,9 @@ print("큰 상승 시각:", rises[rises > 0].to_dict())
 
 # 이전 1위 판매처가 다음 수집에도 목록에 있었나
 listed = sellers.set_index(["snapshot_id", "seller_name"]).index
-big_listed = [(sid, seller) in listed for sid, seller in zip(big.snapshot_id, big.prev_top)]
+big_listed = [
+    (sid, seller) in listed for sid, seller in zip(big.snapshot_id, big.prev_top, strict=True)
+]
 print(f"큰 변화 {len(big)}건 중 이전 1위 판매처가 목록에 남아 있던 건: {sum(big_listed)}")
 
 fig, ax = plt.subplots(figsize=(7.5, 3.4))
@@ -169,7 +178,7 @@ cases = {
     "96987275": "갤럭시 버즈3 FE",
 }
 fig, axes = plt.subplots(len(cases), 1, figsize=(8, 7), sharex=True)
-for ax, (pcode, label) in zip(axes, cases.items()):
+for ax, (pcode, label) in zip(axes, cases.items(), strict=True):
     series = ok[ok.source_product_id == pcode].set_index("kst").lowest_price
     ax.step(series.index, series.values / 10000, where="post", color="#0369a1")
     ax.set_title(label, fontsize=10)
@@ -182,7 +191,11 @@ kioxia = ok[ok.source_product_id == "74056484"]
 print(kioxia.set_index("kst").lowest_price.resample("D").agg(["min", "median", "max"]).to_string())
 first_two = sellers.merge(snaps[["snapshot_id", "source_product_id", "kst"]], on="snapshot_id")
 first_two = first_two[(first_two.source_product_id == "74056484") & (first_two["rank"] <= 3)]
-print(first_two[first_two.kst < "2026-10-24 17:00+09:00"][["kst", "rank", "seller_name", "price"]].to_string())
+print(
+    first_two[first_two.kst < "2026-10-24 17:00+09:00"][
+        ["kst", "rank", "seller_name", "price"]
+    ].to_string()
+)
 
 # %% [markdown]
 # ## 7. 1위 판매처 교체와 분포
@@ -190,7 +203,10 @@ print(first_two[first_two.kst < "2026-10-24 17:00+09:00"][["kst", "rank", "selle
 # %%
 switch = pairs.top_seller != pairs.prev_top
 rate = pairs.assign(sw=switch).groupby("source_product_id").sw.mean() * 100
-print(f"1위 판매처가 바뀐 비율: 전체 {switch.mean():.1%}, 상품별 중앙값 {rate.median():.1f}% ({rate.min():.1f}~{rate.max():.1f}%)")
+print(
+    f"1위 판매처가 바뀐 비율: 전체 {switch.mean():.1%},",
+    f"상품별 중앙값 {rate.median():.1f}% ({rate.min():.1f}~{rate.max():.1f}%)",
+)
 print("1위 판매처 비중:", ok.top_seller.value_counts(normalize=True).head(6).round(3).to_dict())
 
 # %% [markdown]
@@ -203,4 +219,7 @@ print(
     f"비쌈 {(diff > 0).mean():.1%}"
 )
 fee = sellers.delivery_fee
-print(f"배송비 1만 원 이상: {(fee >= 10000).sum()}행 / {len(fee)}행. 많은 값:", fee[fee >= 10000].value_counts().head(5).to_dict())
+print(
+    f"배송비 1만 원 이상: {(fee >= 10000).sum()}행 / {len(fee)}행. 많은 값:",
+    fee[fee >= 10000].value_counts().head(5).to_dict(),
+)
