@@ -69,6 +69,8 @@ def test_records_source_on_run_and_stock_on_sellers(session_factory):
     with session_factory() as session:
         assert session.get(CollectionRun, run.id).source == "danawa"
         assert session.scalars(select(SellerPrice.in_stock)).all() == [True, True]
+        labels = session.scalars(select(SellerPrice.price_label).order_by(SellerPrice.rank)).all()
+        assert labels == ["최저가", None]
 
 
 def test_fills_product_name_from_page(session_factory):

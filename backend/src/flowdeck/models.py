@@ -97,6 +97,8 @@ class SellerPrice(Base):
     delivery_fee: Mapped[int | None] = mapped_column(Integer)
     # 품절로 나온 판매처도 저장한다. 최저가와 판매처 수에는 넣지 않는다 (ADR-0010)
     in_stock: Mapped[bool] = mapped_column(default=True, server_default="true")
+    # 가격 옆 배지 ("최저가", "현금" 등). 목록에 현금가가 섞여 있어서 구분한다 (#33)
+    price_label: Mapped[str | None] = mapped_column(String(20))
 
     snapshot: Mapped[PriceSnapshot] = relationship(back_populates="sellers")
 
