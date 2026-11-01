@@ -463,6 +463,8 @@ export interface components {
             delivery_fee: number | null;
             /** In Stock */
             in_stock: boolean;
+            /** Price Label */
+            price_label: string | null;
         };
         /** ValidationError */
         ValidationError: {
