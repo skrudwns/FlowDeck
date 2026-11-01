@@ -23,6 +23,7 @@
 - [ADR-0010](adr/0010-mock-shop.md) 연습 쇼핑몰: 수집 작업 안에서 띄우고, 규칙으로 정한 가격을 크롤링
 - [ADR-0011](adr/0011-portal-control-and-scheduler.md) 포털 직접 제어와 스케줄러: Actions 유지, 주기와 실행 요청은 DB, 수집 대상 기준은 DB
 - [ADR-0012](adr/0012-collect-single-job.md) 수집 워크플로를 한 job으로: 비공개 저장소의 Actions 사용 시간 줄이기
+- [ADR-0013](adr/0013-validation-datasets.md) 분석 검증용 외부 실데이터: TCPD·TCPDBench, 참가격, 통계청 지수
 
 ## 트러블슈팅
 
