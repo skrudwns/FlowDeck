@@ -21,6 +21,8 @@ class SellerOffer:
     price: int
     delivery_fee: int | None
     in_stock: bool = True
+    # 가격 옆 배지. 다나와는 "최저가", "현금" 등. 없으면 None (#33)
+    price_label: str | None = None
 
 
 @dataclass(frozen=True)

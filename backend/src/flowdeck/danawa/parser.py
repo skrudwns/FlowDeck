@@ -1,7 +1,8 @@
 """다나와 상품 페이지(prod.danawa.com/info/?pcode=...) HTML 파싱.
 
 - 최저가, 판매처 수: schema.org JSON-LD에서 읽는다. 검색엔진용 데이터라 화면 개편에 덜 흔들린다.
-- 상위 판매처(관찰한 최대 10곳): 화면 HTML(ul.list__mall-price)에서 읽는다. 더 쉽게 깨질 수 있어서,
+- 상위 판매처(관찰한 최대 10곳): 화면 HTML(ul.list__mall-price)에서 읽는다. 목록에는 "현금" 같은
+  배지가 붙은 가격이 섞여 있고 가격순이 아니어서 배지를 같이 남긴다. 더 쉽게 깨질 수 있어서,
   이 부분이 실패해도 최저가는 살리고 실패 이유만 남긴다.
 """
 
@@ -70,6 +71,7 @@ def _parse_sellers(tree: LexborHTMLParser) -> tuple[SellerOffer, ...]:
                 code=_seller_code(item),
                 price=price,
                 delivery_fee=_delivery_fee(item.css_first(".box__delivery")),
+                price_label=_text(item.css_first('.box__price [class^="badge__"]')),
             )
         )
     return tuple(sellers)

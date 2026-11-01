@@ -22,7 +22,9 @@ def test_reads_seller_list():
 
     assert page.seller_error is None
     assert page.sellers == (
-        SellerOffer(rank=1, name="가나몰", code="AAA01", price=50000, delivery_fee=0),
+        SellerOffer(
+            rank=1, name="가나몰", code="AAA01", price=50000, delivery_fee=0, price_label="최저가"
+        ),
         SellerOffer(rank=2, name="다라스토어", code="BBB02", price=51200, delivery_fee=3000),
     )
 
