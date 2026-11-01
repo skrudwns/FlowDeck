@@ -69,7 +69,7 @@ def _parse_sellers(tree: LexborHTMLParser) -> tuple[SellerOffer, ...]:
                 name=name,
                 code=_seller_code(item),
                 price=price,
-                delivery_fee=_delivery_fee(_text(item.css_first(".box__delivery"))),
+                delivery_fee=_delivery_fee(item.css_first(".box__delivery")),
             )
         )
     return tuple(sellers)
@@ -91,7 +91,14 @@ def _seller_code(item: LexborNode) -> str | None:
     return values[0] if values else None
 
 
-def _delivery_fee(text: str | None) -> int | None:
+def _delivery_fee(node: LexborNode | None) -> int | None:
+    if node is None:
+        return None
+    # 빠른배송 판매처는 배송비 칸 안에 안내 레이어("낮 3시 이전 주문 시…")가 있다.
+    # 그 숫자까지 이어 붙이면 3,000원이 33,000원이 된다 (#33)
+    for notice in node.css(".box__fast-notice"):
+        notice.decompose()
+    text = node.text(strip=True)
     if not text:
         return None
     if "무료" in text:
