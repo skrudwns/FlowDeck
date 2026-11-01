@@ -64,6 +64,8 @@ class SellerOut(_FromORM):
     delivery_fee: int | None
     # 품절로 나온 판매처. 최저가와 판매처 수에는 들어가지 않는다 (ADR-0010)
     in_stock: bool
+    # 가격 배지 ("최저가", "현금" 등). 현금가는 다나와 최저가 계산에서 빠진다 (#33)
+    price_label: str | None
 
 
 class RunOut(_FromORM):

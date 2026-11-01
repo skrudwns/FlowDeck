@@ -97,6 +97,8 @@ class SellerPrice(Base):
     delivery_fee: Mapped[int | None] = mapped_column(Integer)
     # 품절로 나온 판매처도 저장한다. 최저가와 판매처 수에는 넣지 않는다 (ADR-0010)
     in_stock: Mapped[bool] = mapped_column(default=True, server_default="true")
+    # 가격 옆 배지 ("최저가", "현금" 등). 목록에 현금가가 섞여 있어서 구분한다 (#33)
+    price_label: Mapped[str | None] = mapped_column(String(20))
 
     snapshot: Mapped[PriceSnapshot] = relationship(back_populates="sellers")
 
@@ -139,9 +141,10 @@ class AuditLog(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    # portal / cli. 인증이 없어서 사람 대신 경로를 남긴다
+    # portal / cli / migration. 인증이 없어서 사람 대신 경로를 남긴다
     actor: Mapped[str] = mapped_column(String(20))
-    # product_added / product_reactivated / product_deactivated / schedule_changed / run_requested
+    # product_added / product_reactivated / product_deactivated / schedule_changed / run_requested /
+    # data_fixed (마이그레이션의 데이터 정정)
     action: Mapped[str] = mapped_column(String(40))
     target: Mapped[str] = mapped_column(Text)
     detail: Mapped[str | None] = mapped_column(Text)

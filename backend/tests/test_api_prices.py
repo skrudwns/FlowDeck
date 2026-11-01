@@ -43,6 +43,7 @@ def test_lists_sellers_of_a_snapshot(api, seeded):
             "price": 48000,
             "delivery_fee": 0,
             "in_stock": True,
+            "price_label": None,
         },
         {
             "rank": 2,
@@ -51,6 +52,7 @@ def test_lists_sellers_of_a_snapshot(api, seeded):
             "price": 49000,
             "delivery_fee": 3000,
             "in_stock": False,
+            "price_label": None,
         },
     ]
 

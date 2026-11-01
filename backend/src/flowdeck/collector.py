@@ -205,6 +205,7 @@ def _collect_one(source: Source, product: Product, now: Callable[[], datetime]) 
                 price=s.price,
                 delivery_fee=s.delivery_fee,
                 in_stock=s.in_stock,
+                price_label=s.price_label,
             )
             for s in page.sellers
         ],

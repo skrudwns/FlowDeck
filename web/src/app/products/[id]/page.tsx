@@ -75,7 +75,13 @@ async function ProductDetail({ params }: { params: PageProps<"/products/[id]">["
                 <tr key={s.rank} className={`border-b border-zinc-100 last:border-0 ${s.in_stock ? "" : "text-zinc-400"}`}>
                   <td className="px-4 py-2">{s.rank}</td>
                   <td className="px-4 py-2">{s.seller_name}</td>
-                  <td className="px-4 py-2 text-right">{formatWon(s.price)}</td>
+                  <td className="px-4 py-2 text-right">
+                    {/* 현금가는 다나와 최저가 계산에서 빠지고 목록도 가격순이 아니다 (#33) */}
+                    {s.price_label === "현금" && (
+                      <span className="mr-2 rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">현금</span>
+                    )}
+                    {formatWon(s.price)}
+                  </td>
                   <td className="px-4 py-2 text-right">{s.delivery_fee === 0 ? "무료" : formatWon(s.delivery_fee)}</td>
                   <td className="px-4 py-2">{s.in_stock ? "있음" : "품절"}</td>
                 </tr>

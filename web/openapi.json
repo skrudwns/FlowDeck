@@ -1523,6 +1523,17 @@
           "in_stock": {
             "type": "boolean",
             "title": "In Stock"
+          },
+          "price_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Label"
           }
         },
         "type": "object",
@@ -1532,7 +1543,8 @@
           "seller_code",
           "price",
           "delivery_fee",
-          "in_stock"
+          "in_stock",
+          "price_label"
         ],
         "title": "SellerOut"
       },
