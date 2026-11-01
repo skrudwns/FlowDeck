@@ -6,10 +6,13 @@ requires-python = ">=3.13"
 dependencies = [
     "flowdeck",
     "matplotlib>=3.11.2",
+    "mock-shop",
     "pandas>=3.1.0",
     "pyarrow>=26.0.0",
     "python-dotenv>=1.2.4",
+    "ruptures>=1.1.10",
 ]
 
 [tool.uv.sources]
 flowdeck = { path = "../backend", editable = true }
+mock-shop = { path = "../mock-shop", editable = true }

@@ -36,3 +36,4 @@
 ## 분석 노트
 
 - [AN-0001](analysis/0001-danawa-first-week.md) 다나와 1주 가격 변동: 시간당 10.7% 변동, 큰 하락은 저녁에 몰림, 배송비 파싱 버그 발견
+- [AN-0002](analysis/0002-change-point-validation.md) 급락·변화 감지 검증: TCPDBench 점수 재현, 공개 알고리즘 14개와 비교, 알림 규칙 5%·2시간
