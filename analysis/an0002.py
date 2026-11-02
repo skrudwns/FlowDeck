@@ -16,7 +16,17 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from cpd import cover_score, f1_score, matched, pelt, step_rule
+from cpd import (
+    cover_score,
+    f1_score,
+    matched,
+    mbic,
+    mbic_cost,
+    pelt,
+    residual_sigma,
+    step_rule,
+    zscore,
+)
 from mock_shop.catalog import PRODUCTS, SELLERS
 from mock_shop.pricing import KST, offer_at
 
@@ -230,3 +240,99 @@ for ax, pcode, label in zip(
     ax.set_ylabel("만원")
 axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%m-%d", tz=KST))
 save(fig, "danawa-cases")
+
+# %% [markdown]
+# ## 5. 벌점 고치기 (#40)
+#
+# 4단계까지의 PELT는 σ를 1차 차분의 MAD로 잡아서, 계단형 가격에서 벌점이 0으로 무너졌다.
+# TCPDBench의 default pelt는 R changepoint의 cpt.mean(Normal, MBIC)이다. 값을 표준화하고 σ=1로 둔다.
+# 같은 목적함수(cpd.mbic)를 만들어 저장된 R 결과와 맞춰 본 뒤, 세 데이터에 다시 돌린다.
+
+
+# %%
+def mbic_resid(x):
+    """MBIC로 한 번 나눈 뒤 구간 잔차로 σ를 다시 잡아 한 번 더 나눈다."""
+    z = zscore(x)
+    sigma = residual_sigma(z, mbic(z))
+    return mbic(z, sigma=max(sigma, 1e-3))
+
+
+DETECTORS = {
+    "규칙(5%, 2시간)": lambda x: step_rule(x, **RULE),
+    "PELT(차분 MAD)": pelt,
+    "MBIC": lambda x: mbic(zscore(x)),
+    "MBIC(잔차 σ)": mbic_resid,
+}
+
+# 5-1. 저장된 R 결과와 같은 위치가 나오는가 (저장 값 = 우리 표기 - 1)
+same, other = 0, []
+tcpd = []
+for path in summaries:
+    s = json.load(open(path))
+    name = s["dataset"]
+    if name not in common.index:
+        continue
+    raw = json.load(open(EXT / "tcpd/datasets" / name / f"{name}.json"))["series"][0]["raw"]
+    x = pd.Series(raw, dtype=float).ffill().bfill().to_numpy()
+    r_run = s["results"]["default_pelt"][0]
+    r_cps = [c + 1 for c in r_run["cplocations"]]
+    ours = mbic(zscore(x))
+    if ours == r_cps:
+        same += 1
+    else:
+        z = zscore(x)
+        other.append((name, r_cps, ours, mbic_cost(z, r_cps), mbic_cost(z, ours)))
+    rec = {
+        "dataset": name,
+        "R pelt": r_run["scores"]["f1"],
+        "zero": common.loc[name, "zero|default|f1"],
+    }
+    for label, detect in DETECTORS.items():
+        cps = detect(x)
+        rec[label] = f1_score(s["annotations"], cps)[0]
+        rec[f"{label} cover"] = cover_score(s["annotations"], cps, s["dataset_nobs"])
+        shifted = [c - 1 for c in cps]  # TCPDBench가 R 결과를 저장한 표기
+        rec[f"{label} -1"] = f1_score(s["annotations"], shifted)[0]
+    tcpd.append(rec)
+print(f"R pelt와 위치가 같은 시계열 {same}개 / {len(common)}개")
+for name, r_cps, ours, r_cost, our_cost in other:
+    print(f"  {name}: R {r_cps} 목적함수 {r_cost:.3f}, 우리 {ours} 목적함수 {our_cost:.3f}")
+tcpd = pd.DataFrame(tcpd).set_index("dataset")
+print(tcpd.mean().round(3).to_string())
+print(
+    "R pelt와 F1이 같은 시계열(-1 표기):",
+    int((tcpd["MBIC -1"] - tcpd["R pelt"]).abs().lt(1e-9).sum()),
+)
+
+# %%
+# 5-2. 연습 쇼핑몰, 5-3. 다나와
+rows = [(label, *mock_scores(detect)) for label, detect in DETECTORS.items()]
+print(pd.DataFrame(rows, columns=["감지기", "정밀도", "재현율", "F1", "급락 재현율"]).round(3))
+
+midnight = 0
+for s in mock:
+    pred = mbic(zscore(s["x"]))
+    midnight += sum(hours[p].hour == 0 for p in pred if all(abs(p - t) > 1 for t in s["truth"]))
+print("MBIC 오탐 중 자정:", midnight)
+
+per_product = []
+for _, g in danawa.groupby("source_product_id"):
+    x = g.lowest_price.to_numpy(float)
+    rule_cps, mbic_cps = step_rule(x, **RULE), mbic(zscore(x))
+    # 4단계와 같이 직전 구간 중앙값 대비 변화율
+    before = [np.median(x[a:c]) for a, c in zip([0, *mbic_cps], mbic_cps, strict=False)]
+    small = [c for c, b in zip(mbic_cps, before, strict=True) if abs(x[c] - b) / b < 0.05]
+    per_product.append(
+        {
+            "이름": g["name"].iloc[0][:16],
+            "변동폭%": (x.max() - x.min()) / np.median(x) * 100,
+            "규칙": len(rule_cps),
+            "MBIC": len(mbic_cps),
+            "MBIC 중 5% 미만": len(small),
+            "MBIC(잔차 σ)": len(mbic_resid(x)),
+            "겹침": len(matched(rule_cps, mbic_cps, 1)),
+        }
+    )
+per_product = pd.DataFrame(per_product).sort_values("변동폭%")
+print(per_product.round(0).to_string(index=False))
+print(per_product.drop(columns=["이름", "변동폭%"]).sum().to_dict())
