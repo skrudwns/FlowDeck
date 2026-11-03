@@ -41,3 +41,4 @@
 - [AN-0001](analysis/0001-danawa-first-week.md) 다나와 1주 가격 변동: 시간당 10.7% 변동, 큰 하락은 저녁에 몰림, 배송비 파싱 버그 발견
 - [AN-0002](analysis/0002-change-point-validation.md) 급락·변화 감지 검증: TCPDBench 점수 재현, 공개 알고리즘 14개와 비교, 알림 규칙 5%·2시간, MBIC 벌점으로 R pelt 재현(#40)
 - [AN-0003](analysis/0003-store-prices-and-discounts.md) 판매점 간 가격 비교와 할인 판별: 대형 체인은 점포 가격이 같음, 가격만으로 세일 판별 F1 0.7 안팎, 최저가의 절반은 세일
+- [AN-0004](analysis/0004-price-history-and-benchmarks.md) 참가격 2년 이력과 대조: 평소 가격 비교로도 세일 재현율 0.2 안팎, 다른 판매처 대비가 0.49, 통계청 품목 지수와 방향 75% 같음, Cavallo(2017) 표 재현
