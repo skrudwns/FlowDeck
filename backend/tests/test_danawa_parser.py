@@ -124,3 +124,46 @@ def test_reads_price_label_badge():
         ("마바몰", 52000, None),
         ("사아몰", 45000, "현금"),
     ]
+
+
+# 2026-11-03부터 섞여 나오는 Next.js 페이지. 판매처가 HTML 목록 대신 페이지 데이터의
+# priceCompareTab 섹션에 있다 (#46, TS-0005)
+NEXT_FIXTURE = (Path(__file__).parent / "fixtures" / "danawa_product_next.html").read_text(
+    encoding="utf-8"
+)
+
+
+def test_next_page_reads_lowest_price_from_json_ld():
+    page = parse_product_page(NEXT_FIXTURE)
+
+    assert page.lowest_price == 50000
+    assert page.offer_count == 12
+
+
+def test_next_page_reads_sellers_like_old_list():
+    page = parse_product_page(NEXT_FIXTURE)
+
+    # 옛 목록과 같은 기준: 오픈마켓·종합몰은 쇼핑몰별 최저 4곳씩, 나머지 섹션은 1곳씩.
+    # 가격순으로 세우고 현금가는 뒤에 둔다
+    assert page.seller_error is None
+    assert [
+        (s.rank, s.name, s.code, s.price, s.delivery_fee, s.price_label) for s in page.sellers
+    ] == [
+        (1, "가나몰", "AAA01", 50000, 0, "최저가"),
+        (2, "파하컴", "GGG07", 51000, 4000, None),
+        (3, "다라스토어", "BBB02", 51200, 3000, None),
+        (4, "마바샵", "CCC03", 52000, 3000, None),
+        (5, "카타몰", "FFF06", 52500, 2500, None),
+        (6, "사아몰", "DDD04", 53000, 0, None),
+        (7, "더러컴", "III09", 45000, 0, "현금"),
+    ]
+
+
+def test_next_page_without_price_compare_keeps_lowest_price():
+    html = NEXT_FIXTURE.replace("priceCompareTab", "renamedTab")
+
+    page = parse_product_page(html)
+
+    assert page.lowest_price == 50000
+    assert page.sellers == ()
+    assert "priceCompareTab" in page.seller_error
