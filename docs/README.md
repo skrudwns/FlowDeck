@@ -10,6 +10,7 @@
 - [2026-11-01](devlog/2026-11-01.md) 분석 데이터 방향과 외부 실데이터 검증 계획, Neon 용량 측정
 - [2026-11-02](devlog/2026-11-02.md) 분석 검증용 외부 데이터 확보 (TCPD, TCPDBench, 참가격)
 - [2026-11-03](devlog/2026-11-03.md) 기록 원칙의 커밋 전 확인을 병합 후 확인으로 바꿈
+- [2026-11-04](devlog/2026-11-04.md) 다나와 페이지 개편 대응, 참가격·KOSIS 키와 Cavallo 자료 받음
 
 ## 기술 결정 (ADR)
 
@@ -33,6 +34,7 @@
 - [TS-0002](troubleshooting/0002-setup-uv-major-tag-missing.md) CI가 시작하자마자 실패, setup-uv@v10을 찾지 못함
 - [TS-0003](troubleshooting/0003-scheduled-workflow-not-running.md) 수집 워크플로 예약 실행이 돌지 않음
 - [TS-0004](troubleshooting/0004-next-route-types-missing-in-ci.md) CI에서만 PageProps, LayoutProps 타입을 못 찾음
+- [TS-0005](troubleshooting/0005-danawa-seller-list-missing.md) 다나와 수집이 실행마다 번갈아 "판매처 목록을 찾지 못함"으로 실패
 
 ## 분석 노트
 
