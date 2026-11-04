@@ -36,6 +36,7 @@
 - [TS-0003](troubleshooting/0003-scheduled-workflow-not-running.md) 수집 워크플로 예약 실행이 돌지 않음
 - [TS-0004](troubleshooting/0004-next-route-types-missing-in-ci.md) CI에서만 PageProps, LayoutProps 타입을 못 찾음
 - [TS-0005](troubleshooting/0005-danawa-seller-list-missing.md) 다나와 수집이 실행마다 번갈아 "판매처 목록을 찾지 못함"으로 실패
+- [TS-0006](troubleshooting/0006-healthchecks-down-dns-and-missing-run.md) 11-04 저녁~11-05 새벽 수집이 세 번 빠짐: 러너 DNS 실패, GitHub API 500, cron-job.org 호출 누락
 
 ## 분석 노트
 
