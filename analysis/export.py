@@ -32,7 +32,7 @@ QUERIES = {
     """,
     "sellers": """
         select sp.snapshot_id, sp.rank, sp.seller_name, sp.seller_code, sp.price,
-               sp.delivery_fee, sp.in_stock
+               sp.delivery_fee, sp.in_stock, sp.price_label
         from seller_prices sp
     """,
 }

@@ -43,3 +43,11 @@ export function formatDuration(startIso: string, endIso: string | null): string 
   const seconds = Math.round((new Date(endIso).getTime() - new Date(startIso).getTime()) / 1000);
   return seconds >= 60 ? `${Math.floor(seconds / 60)}분 ${seconds % 60}초` : `${seconds}초`;
 }
+
+/** 비율(%)을 부호와 소수 한 자리로. 반올림해서 0이면 0%. */
+export function formatPct(value: number | null | undefined): string {
+  if (value == null) return "-";
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded === 0) return "0%";
+  return `${rounded > 0 ? "+" : ""}${rounded.toFixed(1)}%`;
+}

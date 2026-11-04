@@ -27,6 +27,7 @@
 - [ADR-0011](adr/0011-portal-control-and-scheduler.md) 포털 직접 제어와 스케줄러: Actions 유지, 주기와 실행 요청은 DB, 수집 대상 기준은 DB
 - [ADR-0012](adr/0012-collect-single-job.md) 수집 워크플로를 한 job으로: 비공개 저장소의 Actions 사용 시간 줄이기
 - [ADR-0013](adr/0013-validation-datasets.md) 분석 검증용 외부 실데이터: TCPD·TCPDBench, 참가격, 통계청 지수
+- [ADR-0014](adr/0014-price-signals-on-request.md) 가격 신호는 저장하지 않고 API 요청 때 계산
 
 ## 트러블슈팅
 
@@ -42,3 +43,4 @@
 - [AN-0002](analysis/0002-change-point-validation.md) 급락·변화 감지 검증: TCPDBench 점수 재현, 공개 알고리즘 14개와 비교, 알림 규칙 5%·2시간, MBIC 벌점으로 R pelt 재현(#40)
 - [AN-0003](analysis/0003-store-prices-and-discounts.md) 판매점 간 가격 비교와 할인 판별: 대형 체인은 점포 가격이 같음, 가격만으로 세일 판별 F1 0.7 안팎, 최저가의 절반은 세일
 - [AN-0004](analysis/0004-price-history-and-benchmarks.md) 참가격 2년 이력과 대조: 평소 가격 비교로도 세일 재현율 0.2 안팎, 다른 판매처 대비가 0.49, 통계청 품목 지수와 방향 75% 같음, Cavallo(2017) 표 재현
+- [AN-0005](analysis/0005-portal-price-signals.md) 포털 가격 신호 확인: 최저가 변화는 AN-0002 규칙과 같은 위치, 다른 판매처 대비는 원래 싼 판매처에 붙음(연습 쇼핑몰 정밀도 0.52), 현금가를 비교에서 뺌

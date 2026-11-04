@@ -68,6 +68,46 @@ class SellerOut(_FromORM):
     price_label: str | None
 
 
+class PriceChangeOut(BaseModel):
+    """최저가 수준이 바뀐 시점 (AN-0002 규칙)."""
+
+    at: datetime
+    before: int
+    after: int
+    pct: float
+
+
+class SellerSignalOut(SellerOut):
+    """판매처 가격과 그 위치. 가격만으로 할인 여부를 판정하지 않는다 (AN-0004)."""
+
+    # 다른 판매처(재고 있음, 현금가 제외) 가격 중앙값 대비 %. 비교할 수 없으면 null
+    vs_others_pct: float | None
+    others_count: int | None
+    # 이 판매처 지난 7일 가격 중앙값과 그 대비 %. 기록이 모자라면 null
+    usual_price: int | None
+    vs_usual_pct: float | None
+    usual_points: int | None
+    cheaper_than_others: bool
+    cheaper_than_usual: bool
+
+
+class SignalRules(BaseModel):
+    change_min_pct: float
+    change_persist: int
+    cheaper_min_pct: float
+    usual_days: int
+
+
+class ProductSignals(BaseModel):
+    rules: SignalRules
+    # 기간 안 최저가 변화. 시간 오름차순
+    changes: list[PriceChangeOut]
+    # 판매처 목록이 있는 가장 최근 수집. 없으면 null과 빈 목록
+    sellers_snapshot_id: int | None
+    sellers_collected_at: datetime | None
+    sellers: list[SellerSignalOut]
+
+
 class RunOut(_FromORM):
     id: int
     source: str

@@ -141,6 +141,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/{product_id}/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Signals
+         * @description 가격 신호. 저장하지 않고 요청 때 수집 기록에서 계산한다 (ADR-0014).
+         *
+         *     - 최저가 변화: 가장 최근 정상 수집부터 지난 days일
+         *     - 판매처 위치: 판매처 목록이 있는 가장 최근 수집. 평소 가격은 그 전 7일
+         */
+        get: operations["get_signals_products__product_id__signals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/snapshots/{snapshot_id}/sellers": {
         parameters: {
             query?: never;
@@ -310,6 +333,23 @@ export interface components {
             /** Offer Count */
             offer_count: number | null;
         };
+        /**
+         * PriceChangeOut
+         * @description 최저가 수준이 바뀐 시점 (AN-0002 규칙).
+         */
+        PriceChangeOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Before */
+            before: number;
+            /** After */
+            after: number;
+            /** Pct */
+            pct: number;
+        };
         /** PricePoint */
         PricePoint: {
             /** Snapshot Id */
@@ -352,6 +392,18 @@ export interface components {
              */
             created_at: string;
             latest?: components["schemas"]["LatestResult"] | null;
+        };
+        /** ProductSignals */
+        ProductSignals: {
+            rules: components["schemas"]["SignalRules"];
+            /** Changes */
+            changes: components["schemas"]["PriceChangeOut"][];
+            /** Sellers Snapshot Id */
+            sellers_snapshot_id: number | null;
+            /** Sellers Collected At */
+            sellers_collected_at: string | null;
+            /** Sellers */
+            sellers: components["schemas"]["SellerSignalOut"][];
         };
         /** ProductUpdate */
         ProductUpdate: {
@@ -465,6 +517,51 @@ export interface components {
             in_stock: boolean;
             /** Price Label */
             price_label: string | null;
+        };
+        /**
+         * SellerSignalOut
+         * @description 판매처 가격과 그 위치. 가격만으로 할인 여부를 판정하지 않는다 (AN-0004).
+         */
+        SellerSignalOut: {
+            /** Rank */
+            rank: number;
+            /** Seller Name */
+            seller_name: string;
+            /** Seller Code */
+            seller_code: string | null;
+            /** Price */
+            price: number;
+            /** Delivery Fee */
+            delivery_fee: number | null;
+            /** In Stock */
+            in_stock: boolean;
+            /** Price Label */
+            price_label: string | null;
+            /** Vs Others Pct */
+            vs_others_pct: number | null;
+            /** Others Count */
+            others_count: number | null;
+            /** Usual Price */
+            usual_price: number | null;
+            /** Vs Usual Pct */
+            vs_usual_pct: number | null;
+            /** Usual Points */
+            usual_points: number | null;
+            /** Cheaper Than Others */
+            cheaper_than_others: boolean;
+            /** Cheaper Than Usual */
+            cheaper_than_usual: boolean;
+        };
+        /** SignalRules */
+        SignalRules: {
+            /** Change Min Pct */
+            change_min_pct: number;
+            /** Change Persist */
+            change_persist: number;
+            /** Cheaper Min Pct */
+            cheaper_min_pct: number;
+            /** Usual Days */
+            usual_days: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -858,6 +955,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricePoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_signals_products__product_id__signals_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductSignals"];
                 };
             };
             /** @description Validation Error */

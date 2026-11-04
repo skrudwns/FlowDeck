@@ -1,21 +1,37 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import exists, func, select
 from sqlalchemy.dialects.postgresql import distinct_on
 
 from flowdeck.api.deps import SessionDep
 from flowdeck.api.schemas import (
     CONTROL_ERRORS,
     LatestResult,
+    PriceChangeOut,
     PricePoint,
     ProductCreate,
     ProductOut,
+    ProductSignals,
     ProductUpdate,
+    SellerOut,
+    SellerSignalOut,
+    SignalRules,
 )
 from flowdeck.control import add_danawa_product, set_product_active
-from flowdeck.models import PriceSnapshot, Product
+from flowdeck.models import PriceSnapshot, Product, SellerPrice
+from flowdeck.signals import (
+    CASH_LABEL,
+    CHANGE_MIN_PCT,
+    CHANGE_PERSIST,
+    CHEAPER_MIN_PCT,
+    USUAL_WINDOW,
+    SellerOffer,
+    price_changes,
+    seller_key,
+    seller_positions,
+)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -122,3 +138,119 @@ def list_prices(
         )
         for s in reversed(rows)
     ]
+
+
+@router.get("/{product_id}/signals")
+def get_signals(
+    product_id: int,
+    session: SessionDep,
+    days: Annotated[int, Query(ge=1, le=30)] = 7,
+) -> ProductSignals:
+    """가격 신호. 저장하지 않고 요청 때 수집 기록에서 계산한다 (ADR-0014).
+
+    - 최저가 변화: 가장 최근 정상 수집부터 지난 days일
+    - 판매처 위치: 판매처 목록이 있는 가장 최근 수집. 평소 가격은 그 전 7일
+    """
+    if session.get(Product, product_id) is None:
+        raise HTTPException(status_code=404, detail="상품을 찾지 못함")
+    ok = (
+        PriceSnapshot.product_id == product_id,
+        PriceSnapshot.status == "ok",
+    )
+    rules = SignalRules(
+        change_min_pct=CHANGE_MIN_PCT,
+        change_persist=CHANGE_PERSIST,
+        cheaper_min_pct=CHEAPER_MIN_PCT,
+        usual_days=USUAL_WINDOW.days,
+    )
+
+    changes = []
+    latest_at = session.scalar(
+        select(func.max(PriceSnapshot.collected_at)).where(
+            *ok, PriceSnapshot.lowest_price.is_not(None)
+        )
+    )
+    if latest_at is not None:
+        rows = session.execute(
+            select(PriceSnapshot.collected_at, PriceSnapshot.lowest_price)
+            .where(
+                *ok,
+                PriceSnapshot.lowest_price.is_not(None),
+                PriceSnapshot.collected_at >= latest_at - timedelta(days=days),
+            )
+            .order_by(PriceSnapshot.collected_at, PriceSnapshot.id)
+        ).all()
+        changes = [
+            PriceChangeOut(at=c.at, before=c.before, after=c.after, pct=c.pct)
+            for c in price_changes([(r.collected_at, r.lowest_price) for r in rows])
+        ]
+
+    snapshot = session.scalars(
+        select(PriceSnapshot)
+        .where(*ok, exists().where(SellerPrice.snapshot_id == PriceSnapshot.id))
+        .order_by(PriceSnapshot.collected_at.desc(), PriceSnapshot.id.desc())
+        .limit(1)
+    ).first()
+    if snapshot is None:
+        return ProductSignals(
+            rules=rules,
+            changes=changes,
+            sellers_snapshot_id=None,
+            sellers_collected_at=None,
+            sellers=[],
+        )
+
+    def key(code: str | None, name: str, label: str | None) -> str:
+        return seller_key(code, name, label == CASH_LABEL)
+
+    history: dict[str, list[int]] = {}
+    past = session.execute(
+        select(
+            SellerPrice.seller_code,
+            SellerPrice.seller_name,
+            SellerPrice.price_label,
+            SellerPrice.price,
+        )
+        .join(PriceSnapshot, PriceSnapshot.id == SellerPrice.snapshot_id)
+        .where(
+            *ok,
+            SellerPrice.in_stock,
+            PriceSnapshot.collected_at >= snapshot.collected_at - USUAL_WINDOW,
+            PriceSnapshot.collected_at < snapshot.collected_at,
+        )
+    ).all()
+    for r in past:
+        history.setdefault(key(r.seller_code, r.seller_name, r.price_label), []).append(r.price)
+
+    current = [
+        SellerOffer(
+            key=key(s.seller_code, s.seller_name, s.price_label),
+            price=s.price,
+            in_stock=s.in_stock,
+            cash=s.price_label == CASH_LABEL,
+        )
+        for s in snapshot.sellers
+    ]
+    positions = seller_positions(current, history)
+    sellers = []
+    for s, o in zip(snapshot.sellers, current, strict=True):
+        pos = positions[o.key]
+        sellers.append(
+            SellerSignalOut(
+                **SellerOut.model_validate(s).model_dump(),
+                vs_others_pct=pos.vs_others_pct if pos else None,
+                others_count=pos.others_count if pos else None,
+                usual_price=pos.usual_price if pos else None,
+                vs_usual_pct=pos.vs_usual_pct if pos else None,
+                usual_points=pos.usual_points if pos else None,
+                cheaper_than_others=bool(pos and pos.cheaper_than_others),
+                cheaper_than_usual=bool(pos and pos.cheaper_than_usual),
+            )
+        )
+    return ProductSignals(
+        rules=rules,
+        changes=changes,
+        sellers_snapshot_id=snapshot.id,
+        sellers_collected_at=snapshot.collected_at,
+        sellers=sellers,
+    )
