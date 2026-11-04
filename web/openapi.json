@@ -574,6 +574,61 @@
         }
       }
     },
+    "/products/{product_id}/signals": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Get Signals",
+        "description": "가격 신호. 저장하지 않고 요청 때 수집 기록에서 계산한다 (ADR-0014).\n\n- 최저가 변화: 가장 최근 정상 수집부터 지난 days일\n- 판매처 위치: 판매처 목록이 있는 가장 최근 수집. 평소 가격은 그 전 7일",
+        "operationId": "get_signals_products__product_id__signals_get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "default": 7,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSignals"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/snapshots/{snapshot_id}/sellers": {
       "get": {
         "tags": [
@@ -1053,6 +1108,36 @@
         "title": "LatestResult",
         "description": "상품의 가장 최근 수집 결과. 실패했으면 가격은 비어 있다."
       },
+      "PriceChangeOut": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "before": {
+            "type": "integer",
+            "title": "Before"
+          },
+          "after": {
+            "type": "integer",
+            "title": "After"
+          },
+          "pct": {
+            "type": "number",
+            "title": "Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "before",
+          "after",
+          "pct"
+        ],
+        "title": "PriceChangeOut",
+        "description": "최저가 수준이 바뀐 시점 (AN-0002 규칙)."
+      },
       "PricePoint": {
         "properties": {
           "snapshot_id": {
@@ -1170,6 +1255,59 @@
           "created_at"
         ],
         "title": "ProductOut"
+      },
+      "ProductSignals": {
+        "properties": {
+          "rules": {
+            "$ref": "#/components/schemas/SignalRules"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/PriceChangeOut"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "sellers_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sellers Snapshot Id"
+          },
+          "sellers_collected_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sellers Collected At"
+          },
+          "sellers": {
+            "items": {
+              "$ref": "#/components/schemas/SellerSignalOut"
+            },
+            "type": "array",
+            "title": "Sellers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rules",
+          "changes",
+          "sellers_snapshot_id",
+          "sellers_collected_at",
+          "sellers"
+        ],
+        "title": "ProductSignals"
       },
       "ProductUpdate": {
         "properties": {
@@ -1547,6 +1685,169 @@
           "price_label"
         ],
         "title": "SellerOut"
+      },
+      "SellerSignalOut": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "seller_name": {
+            "type": "string",
+            "title": "Seller Name"
+          },
+          "seller_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seller Code"
+          },
+          "price": {
+            "type": "integer",
+            "title": "Price"
+          },
+          "delivery_fee": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Fee"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock"
+          },
+          "price_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Label"
+          },
+          "vs_others_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Others Pct"
+          },
+          "others_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Others Count"
+          },
+          "usual_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usual Price"
+          },
+          "vs_usual_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Usual Pct"
+          },
+          "usual_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usual Points"
+          },
+          "cheaper_than_others": {
+            "type": "boolean",
+            "title": "Cheaper Than Others"
+          },
+          "cheaper_than_usual": {
+            "type": "boolean",
+            "title": "Cheaper Than Usual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "seller_name",
+          "seller_code",
+          "price",
+          "delivery_fee",
+          "in_stock",
+          "price_label",
+          "vs_others_pct",
+          "others_count",
+          "usual_price",
+          "vs_usual_pct",
+          "usual_points",
+          "cheaper_than_others",
+          "cheaper_than_usual"
+        ],
+        "title": "SellerSignalOut",
+        "description": "판매처 가격과 그 위치. 가격만으로 할인 여부를 판정하지 않는다 (AN-0004)."
+      },
+      "SignalRules": {
+        "properties": {
+          "change_min_pct": {
+            "type": "number",
+            "title": "Change Min Pct"
+          },
+          "change_persist": {
+            "type": "integer",
+            "title": "Change Persist"
+          },
+          "cheaper_min_pct": {
+            "type": "number",
+            "title": "Cheaper Min Pct"
+          },
+          "usual_days": {
+            "type": "integer",
+            "title": "Usual Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "change_min_pct",
+          "change_persist",
+          "cheaper_min_pct",
+          "usual_days"
+        ],
+        "title": "SignalRules"
       },
       "ValidationError": {
         "properties": {
