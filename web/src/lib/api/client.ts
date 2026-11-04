@@ -16,6 +16,8 @@ export type RunDetail = Schemas["RunDetail"];
 export type Product = Schemas["ProductOut"];
 export type PricePoint = Schemas["PricePoint"];
 export type Seller = Schemas["SellerOut"];
+export type SellerSignal = Schemas["SellerSignalOut"];
+export type PriceChange = Schemas["PriceChangeOut"];
 
 /** 응답에 오류가 있으면 던진다. 화면은 error.tsx가 받는다. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
